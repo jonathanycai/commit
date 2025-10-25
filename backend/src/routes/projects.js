@@ -117,10 +117,10 @@ router.get("/", async (req, res) => {
         }
 
         // Filter by user profile fields (joined table)
-        if (role) query = query.eq("users.role", role);
-        if (experience) query = query.eq("users.experience", experience);
+        if (role) query = query.eq("users.role", role.trim());
+        if (experience) query = query.eq("users.experience", experience.trim());
         if (time_commitment)
-            query = query.eq("users.time_commitment", time_commitment);
+            query = query.eq("users.time_commitment", time_commitment.trim());
 
         const { data, error, count } = await query;
 
