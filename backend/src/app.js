@@ -3,6 +3,8 @@ import express from "express";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import healthRoutes from "./routes/health.js";
+import applicationRoutes from "./routes/applications.js";
+import projectRoutes from "./routes/projects.js";
 
 const app = express();
 app.use(express.json());
@@ -19,6 +21,12 @@ app.use("/auth", authRoutes);
 
 // User profile routes
 app.use("/users", userRoutes);
+
+// Projects routes
+app.use("/projects", projectRoutes);
+
+// Applications/Requests routes
+app.use("/applications", applicationRoutes);
 
 
 app.listen(process.env.PORT || 4000, () =>
