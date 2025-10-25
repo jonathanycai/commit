@@ -13,7 +13,7 @@ const supabase = createClient(
 router.post("/", requireAuth, async (req, res) => {
     try {
         const { title, description, tags, looking_for } = req.body;
-        
+
         if (!title) {
             return res.status(400).json({ error: 'Project title is required' });
         }
@@ -52,73 +52,101 @@ router.post("/", requireAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'Project created successfully', 
-            project: data 
+        res.json({
+            message: 'Project created successfully',
+            project: data
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to create project' });
     }
 });
 
-// Get all projects (with pagination and filtering)
 router.get("/", async (req, res) => {
     try {
-        const { page = 1, limit = 10, is_active = 'true', tags, looking_for } = req.query;
+        const {
+            page = 1,
+            limit = 10,
+            is_active = "true",
+            tags,
+            looking_for,
+            role,
+            experience,
+            time_commitment,
+        } = req.query;
+
         const offset = (page - 1) * limit;
 
+        // Base query
         let query = supabase
-            .from('projects')
-            .select(`
-                id,
-                owner_id,
-                title,
-                description,
-                tags,
-                looking_for,
-                is_active,
-                created_at,
-                users!projects_owner_id_fkey (
-                    id,
-                    username,
-                    email,
-                    role,
-                    experience
-                )
-            `)
-            .eq('is_active', is_active === 'true')
-            .order('created_at', { ascending: false })
+            .from("projects")
+            .select(
+                `
+        id,
+        owner_id,
+        title,
+        description,
+        tags,
+        looking_for,
+        is_active,
+        created_at,
+        users!projects_owner_id_fkey (
+          id,
+          username,
+          email,
+          role,
+          experience,
+          time_commitment
+        )
+      `,
+                { count: "exact" } // enables total result count
+            )
+            .eq("is_active", is_active === "true")
+            .order("created_at", { ascending: false })
             .range(offset, offset + limit - 1);
 
-        // Filter by tags if provided
+        // Filter by tags
         if (tags) {
-            const tagArray = tags.split(',');
-            query = query.overlaps('tags', tagArray);
+            const tagArray = tags.split(",").map((t) => t.trim());
+            query = query.overlaps("tags", tagArray);
         }
 
-        // Filter by looking_for if provided
+        // Filter by looking_for
         if (looking_for) {
-            const lookingForArray = looking_for.split(',');
-            query = query.overlaps('looking_for', lookingForArray);
+            const lookingArray = looking_for.split(",").map((r) => r.trim());
+            query = query.overlaps("looking_for", lookingArray);
         }
 
-        const { data, error } = await query;
+        // Filter by user profile fields (joined table)
+        if (role) query = query.eq("users.role", role);
+        if (experience) query = query.eq("users.experience", experience);
+        if (time_commitment)
+            query = query.eq("users.time_commitment", time_commitment);
+
+        const { data, error, count } = await query;
 
         if (error) {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             projects: data,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                total: data.length,
-                totalPages: Math.ceil(data.length / limit)
-            }
+                total: count || data.length,
+                totalPages: Math.ceil((count || data.length) / limit),
+            },
+            filters: {
+                tags,
+                looking_for,
+                role,
+                experience,
+                time_commitment,
+            },
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch projects' });
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch projects" });
     }
 });
 
@@ -215,9 +243,9 @@ router.put("/:id", requireAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'Project updated successfully', 
-            project: data 
+        res.json({
+            message: 'Project updated successfully',
+            project: data
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update project' });
@@ -254,7 +282,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             message: `Project "${existingProject.title}" deleted successfully`
         });
     } catch (error) {
@@ -284,7 +312,7 @@ router.get("/my/projects", requireAuth, async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             my_projects: data,
             count: data.length
         });
@@ -328,7 +356,7 @@ router.get("/search/:query", async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             projects: data,
             query,
             pagination: {
