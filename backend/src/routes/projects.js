@@ -133,8 +133,8 @@ router.get("/", async (req, res) => {
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                total: count || data.length,
-                totalPages: Math.ceil((count || data.length) / limit),
+                total: count || 0,
+                totalPages: Math.ceil((count || 0) / limit),
             },
             filters: {
                 tags,
