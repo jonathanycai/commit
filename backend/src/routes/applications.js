@@ -406,4 +406,90 @@ router.get("/project/:projectId", requireAuth, async (req, res) => {
     }
 });
 
+// Get all projects the user has NOT applied to
+router.get("/unapplied", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const {
+            is_active = "true",
+            tags,
+            looking_for,
+            role,
+            experience,
+            time_commitment,
+        } = req.query;
+
+        // Step 1: Get all project IDs the user has already applied to
+        const { data: appliedProjects, error: appliedError } = await supabase
+            .from("applications")
+            .select("project_id")
+            .eq("user_id", userId);
+
+        if (appliedError) throw appliedError;
+
+        const appliedIds = appliedProjects?.map((a) => a.project_id) || [];
+
+        // Step 2: Build the main query excluding those projects
+        let query = supabase
+            .from("projects")
+            .select(
+                `
+          id,
+          owner_id,
+          title,
+          description,
+          tags,
+          looking_for,
+          is_active,
+          created_at,
+          users!projects_owner_id_fkey (
+            id,
+            username,
+            email,
+            role,
+            experience,
+            time_commitment
+          )
+        `
+            )
+            .eq("is_active", is_active === "true")
+            .order("created_at", { ascending: false });
+
+        // Exclude projects already applied to
+        if (appliedIds.length > 0) {
+            query = query.not("id", "in", `(${appliedIds.join(",")})`);
+        }
+
+        // Optional filters
+        if (tags) {
+            const tagArray = tags.split(",").map((t) => t.trim());
+            query = query.overlaps("tags", tagArray);
+        }
+
+        if (looking_for) {
+            const lookingArray = looking_for.split(",").map((r) => r.trim());
+            query = query.overlaps("looking_for", lookingArray);
+        }
+
+        if (role) query = query.eq("users.role", role.trim());
+        if (experience) query = query.eq("users.experience", experience.trim());
+        if (time_commitment)
+            query = query.eq("users.time_commitment", time_commitment.trim());
+
+        // Step 3: Run query
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        res.json({
+            projects: data,
+            excluded_project_ids: appliedIds,
+            count: data?.length || 0,
+        });
+    } catch (error) {
+        console.error("Error fetching unapplied projects:", error.message);
+        res.status(500).json({ error: "Failed to fetch unapplied projects" });
+    }
+});
+
 export default router;
