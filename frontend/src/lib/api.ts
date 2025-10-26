@@ -165,7 +165,7 @@ export const apiService = new ApiService(API_BASE_URL);
 
 // Helper function to get auth token from localStorage
 const getAuthToken = () => {
-  return localStorage.getItem('auth_token');
+  return localStorage.getItem('access_token');
 };
 
 // Helper function for API requests
