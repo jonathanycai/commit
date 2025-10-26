@@ -150,6 +150,8 @@ router.get("/successful", requireAuth, async (req, res) => {
 // Get received requests (requests to user's projects)
 router.get("/received", requireAuth, async (req, res) => {
     try {
+        console.log('Fetching received requests for user:', req.user.id);
+        
         const { data, error } = await supabase
             .from('applications')
             .select(`
@@ -159,10 +161,11 @@ router.get("/received", requireAuth, async (req, res) => {
                 blurb,
                 status,
                 created_at,
-                projects (
+                projects!inner (
                     id,
                     title,
-                    description
+                    description,
+                    owner_id
                 ),
                 users!applications_user_id_fkey (
                     id,
@@ -180,14 +183,18 @@ router.get("/received", requireAuth, async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) {
+            console.error('Error fetching received requests:', error);
             return res.status(500).json({ error: error.message });
         }
 
+        console.log('Found', data.length, 'received requests');
+        
         res.json({
             received_requests: data,
             count: data.length
         });
     } catch (error) {
+        console.error('Exception in /received:', error);
         res.status(500).json({ error: 'Failed to fetch received requests' });
     }
 });

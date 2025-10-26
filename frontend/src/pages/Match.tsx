@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/layout/Navbar";
 import SwipeCard from "@/components/match/SwipeCard";
 import { Button } from "@/components/ui/button";
@@ -19,60 +19,31 @@ interface Project {
 }
 
 const Match = () => {
-  const [currentProjects, setCurrentProjects] = useState<Project[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  // TODO: Get actual user ID from auth context
-  const userId = localStorage.getItem('user_id') || '550e8400-e29b-41d4-a716-446655440000';
-
-  const currentProject = currentProjects[currentIndex];
+  
+  // Get user ID from token
+  const token = localStorage.getItem('access_token');
+  const getUserIdFromToken = () => {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  };
+  const userId = getUserIdFromToken();
 
   // Fetch initial project when component mounts
   useEffect(() => {
-    // Check if user is logged in
     if (!userId) {
       toast.error("Please log in to view projects");
       return;
     }
     fetchNextProject();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchNextProject = async () => {
-    try {
-      setIsLoading(true);
-      
-      const project = await getNextProject(userId);
-      
-      if (project.message || !project.id) {
-        // No more projects available
-        setIsLoading(false);
-        return;
-      }
-
-      // Transform API response to match SwipeCard interface
-      const transformedProject: Project = {
-        id: project.id,
-        title: project.title || 'Untitled Project',
-        creator: project.users?.username || project.users?.email || 'Unknown Creator',
-        roles: [
-          ...(project.looking_for || []),
-          ...(project.tags || []).slice(0, 2)
-        ],
-        timestamp: formatTimestamp(project.created_at),
-        description: project.description || 'No description available.',
-      };
-
-      setCurrentProjects(prev => [...prev, transformedProject]);
-      setIsLoading(false);
-    } catch (error: any) {
-      console.error("Error fetching project:", error);
-      const errorMessage = error?.message || "Failed to load project";
-      toast.error(errorMessage);
-      setIsLoading(false);
-    }
-  };
+  }, [userId]);
 
   const formatTimestamp = (dateString: string) => {
     try {
@@ -89,22 +60,56 @@ const Match = () => {
     }
   };
 
-  const handleSwipeLeft = async () => {
+  const fetchNextProject = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      const project = await getNextProject(userId);
+      
+      if (project.message || !project.id) {
+        setIsLoading(false);
+        setCurrentProject(null);
+        return;
+      }
+
+      // Transform API response to match SwipeCard interface
+      const transformedProject: Project = {
+        id: project.id,
+        title: project.title || 'Untitled Project',
+        creator: project.users?.username || project.users?.email || 'Unknown Creator',
+        roles: [
+          ...(project.looking_for || []),
+          ...(project.tags || []).slice(0, 2)
+        ],
+        timestamp: formatTimestamp(project.created_at),
+        description: project.description || 'No description available.',
+      };
+
+      setCurrentProject(transformedProject);
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error fetching project:", error);
+      const errorMessage = error?.message || "Failed to load project";
+      toast.error(errorMessage);
+      setIsLoading(false);
+      setCurrentProject(null);
+    }
+  }, [userId]);
+
+  const handleSwipeLeft = useCallback(async () => {
     if (!currentProject || isProcessing) return;
+
+    const projectId = currentProject.id;
 
     try {
       setIsProcessing(true);
       
       // Record swipe as "pass"
-      await recordProjectSwipe(userId, currentProject.id, 'pass');
+      await recordProjectSwipe(userId, projectId, 'pass');
       toast.error("Not my thing");
       
-      // Move to next card or fetch new project
-      if (currentIndex < currentProjects.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        await fetchNextProject();
-      }
+      // Move to next card after API call completes
+      await fetchNextProject();
     } catch (error: any) {
       console.error("Error recording swipe:", error);
       const errorMessage = error?.message || "Failed to record swipe";
@@ -112,33 +117,36 @@ const Match = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [currentProject, isProcessing, userId, fetchNextProject]);
 
-  const handleSwipeRight = async () => {
+  const handleSwipeRight = useCallback(async () => {
     if (!currentProject || isProcessing) return;
+
+    const projectId = currentProject.id;
 
     try {
       setIsProcessing(true);
       
       // Record swipe as "like"
-      await recordProjectSwipe(userId, currentProject.id, 'like');
+      await recordProjectSwipe(userId, projectId, 'like');
       
       // Also create an application request to the project owner
       try {
-        await applyToProject(currentProject.id);
+        const appResult = await applyToProject(projectId);
+        console.log("Application created successfully:", appResult);
       } catch (appError: any) {
         // Don't fail the swipe if application fails (e.g., already applied)
-        console.log("Application note:", appError);
+        console.error("Application error:", appError);
+        // Only show toast if it's NOT an "already exists" error
+        if (!appError.message?.includes("already exists")) {
+          toast.error(`Application failed: ${appError.message || 'Unknown error'}`);
+        }
       }
       
       toast.success("Down to commit! 🎉");
       
-      // Move to next card or fetch new project
-      if (currentIndex < currentProjects.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        await fetchNextProject();
-      }
+      // Move to next card after API call completes
+      await fetchNextProject();
     } catch (error: any) {
       console.error("Error recording swipe:", error);
       const errorMessage = error?.message || "Failed to record swipe";
@@ -146,7 +154,7 @@ const Match = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [currentProject, isProcessing, userId, fetchNextProject]);
 
   return (
     <div className="min-h-screen bg-background font-lexend overflow-hidden">
@@ -164,7 +172,7 @@ const Match = () => {
         
         <div className="container mx-auto px-4 pt-24 pb-12">
           <div className="flex items-start justify-between gap-8">
-            {/* Swipe Card Stack */}
+            {/* Single Card Display */}
             <div className="w-[550px] flex-shrink-0 relative" style={{ minHeight: '650px' }}>
               {isLoading ? (
                 <div 
@@ -187,58 +195,12 @@ const Match = () => {
                   </div>
                 </div>
               ) : currentProject ? (
-                <>
-                  {/* Card 3 (back) */}
-                  {currentIndex + 2 < currentProjects.length && (
-                    <div 
-                      className="absolute top-6 left-0 right-0 transition-all duration-300"
-                      style={{ 
-                        transform: 'scale(0.92)',
-                        opacity: 0.5,
-                        zIndex: 1
-                      }}
-                    >
-                      <SwipeCard
-                        project={currentProjects[currentIndex + 2]}
-                        onSwipeLeft={() => {}}
-                        onSwipeRight={() => {}}
-                        isInteractive={false}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Card 2 (middle) */}
-                  {currentIndex + 1 < currentProjects.length && (
-                    <div 
-                      className="absolute top-3 left-0 right-0 transition-all duration-300"
-                      style={{ 
-                        transform: 'scale(0.96)',
-                        opacity: 0.7,
-                        zIndex: 2
-                      }}
-                    >
-                      <SwipeCard
-                        project={currentProjects[currentIndex + 1]}
-                        onSwipeLeft={() => {}}
-                        onSwipeRight={() => {}}
-                        isInteractive={false}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Card 1 (front) */}
-                  <div 
-                    className="relative transition-all duration-300"
-                    style={{ zIndex: 3 }}
-                  >
-                    <SwipeCard
-                      project={currentProject}
-                      onSwipeLeft={handleSwipeLeft}
-                      onSwipeRight={handleSwipeRight}
-                      isInteractive={!isProcessing}
-                    />
-                  </div>
-                </>
+                <SwipeCard
+                  project={currentProject}
+                  onSwipeLeft={handleSwipeLeft}
+                  onSwipeRight={handleSwipeRight}
+                  isInteractive={!isProcessing}
+                />
               ) : (
                 <div 
                   className="rounded-[32px] p-[3px]"
@@ -257,11 +219,11 @@ const Match = () => {
                       <h3 className="text-3xl font-bold text-white">No projects left</h3>
                       <p className="text-white/60">Check back later for more projects!</p>
                       <Button 
-                        onClick={() => setCurrentIndex(0)}
+                        onClick={fetchNextProject}
                         className="mt-4 rounded-xl"
                         style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
                       >
-                        Start Over
+                        Try Again
                       </Button>
                     </div>
                   </div>
@@ -269,7 +231,7 @@ const Match = () => {
               )}
             </div>
 
-            {/* Right Side - Mascots */}
+            {/* Right Side - Mascots and Buttons */}
             <div className="flex-1 flex flex-col items-center justify-center space-y-12 max-w-none pt-16">
               <h2 
                 className="text-5xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
@@ -330,18 +292,18 @@ const Match = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
+        <style>{`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-20px);
+            }
           }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   );
 };
