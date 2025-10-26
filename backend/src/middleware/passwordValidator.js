@@ -29,32 +29,32 @@ export const validatePasswordStrength = (req, res, next) => {
     const warnings = [];
     let score = 0;
 
-    // Length check (minimum 8 characters)
-    if (password.length < 8) {
-        errors.push('Password must be at least 8 characters long');
+    // Length check (minimum 6 characters)
+    if (password.length < 6) {
+        errors.push('Password must be at least 6 characters long');
     } else if (password.length >= 12) {
         score += 2;
-    } else {
+    } else if (password.length >= 8) {
         score += 1;
     }
 
     // Uppercase letter check
     if (!/[A-Z]/.test(password)) {
-        errors.push('Password must contain at least one uppercase letter');
+        warnings.push('Consider adding uppercase letters for better security');
     } else {
         score += 1;
     }
 
     // Lowercase letter check
     if (!/[a-z]/.test(password)) {
-        errors.push('Password must contain at least one lowercase letter');
+        warnings.push('Consider adding lowercase letters for better security');
     } else {
         score += 1;
     }
 
     // Number check
     if (!/\d/.test(password)) {
-        errors.push('Password must contain at least one number');
+        warnings.push('Consider adding numbers for better security');
     } else {
         score += 1;
     }
@@ -68,7 +68,7 @@ export const validatePasswordStrength = (req, res, next) => {
 
     // Common password check
     if (commonPasswords.includes(password.toLowerCase())) {
-        errors.push('Password is too common and easily guessable');
+        warnings.push('Password is common and easily guessable - consider using a more unique password');
     }
 
     // Sequential characters check
@@ -122,10 +122,10 @@ export const validatePasswordStrength = (req, res, next) => {
                 errors,
                 warnings,
                 requirements: {
-                    minLength: 8,
-                    requireUppercase: true,
-                    requireLowercase: true,
-                    requireNumbers: true,
+                    minLength: 6,
+                    requireUppercase: false,
+                    requireLowercase: false,
+                    requireNumbers: false,
                     requireSpecialChars: false
                 }
             }
@@ -159,28 +159,28 @@ export const checkPasswordStrength = (req, res) => {
     let score = 0;
 
     // Same validation logic as above but without blocking
-    if (password.length < 8) {
-        errors.push('Password must be at least 8 characters long');
+    if (password.length < 6) {
+        errors.push('Password must be at least 6 characters long');
     } else if (password.length >= 12) {
         score += 2;
-    } else {
+    } else if (password.length >= 8) {
         score += 1;
     }
 
     if (!/[A-Z]/.test(password)) {
-        errors.push('Password must contain at least one uppercase letter');
+        warnings.push('Consider adding uppercase letters for better security');
     } else {
         score += 1;
     }
 
     if (!/[a-z]/.test(password)) {
-        errors.push('Password must contain at least one lowercase letter');
+        warnings.push('Consider adding lowercase letters for better security');
     } else {
         score += 1;
     }
 
     if (!/\d/.test(password)) {
-        errors.push('Password must contain at least one number');
+        warnings.push('Consider adding numbers for better security');
     } else {
         score += 1;
     }
@@ -192,7 +192,7 @@ export const checkPasswordStrength = (req, res) => {
     }
 
     if (commonPasswords.includes(password.toLowerCase())) {
-        errors.push('Password is too common and easily guessable');
+        warnings.push('Password is common and easily guessable - consider using a more unique password');
     }
 
     if (/(.)\1{2,}/.test(password)) {
@@ -218,10 +218,10 @@ export const checkPasswordStrength = (req, res) => {
             errors,
             warnings,
             requirements: {
-                minLength: 8,
-                requireUppercase: true,
-                requireLowercase: true,
-                requireNumbers: true,
+                minLength: 6,
+                requireUppercase: false,
+                requireLowercase: false,
+                requireNumbers: false,
                 requireSpecialChars: false
             }
         }
