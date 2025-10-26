@@ -113,7 +113,6 @@ const Projects = () => {
     }
   };
 
-
   // Submit handler for creating project
   const handleSubmit = async () => {
     if (!projectTitle || !projectDescription) {

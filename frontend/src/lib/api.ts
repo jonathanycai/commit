@@ -269,7 +269,6 @@ export const applyToProject = async (projectId: string) => {
 // Apply to a project from the Projects page
 export const applyToProjectBoard = applyToProject;
 
-
 // Get all active projects
 export const getAllProjects = async () => {
   return apiRequest('/projects', {
