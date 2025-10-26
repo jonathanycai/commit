@@ -1,7 +1,6 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuth } from "../middleware/auth.js";
-import { projectCreationLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
@@ -11,7 +10,7 @@ const supabase = createClient(
 );
 
 // Create a new project
-router.post("/", requireAuth, projectCreationLimiter, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
     try {
         const { title, project_name, description, tags, looking_for } = req.body;
 
@@ -67,8 +66,6 @@ router.post("/", requireAuth, projectCreationLimiter, async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const {
-            page = 1,
-            limit = 10,
             is_active = "true",
             tags,
             looking_for,
@@ -77,35 +74,31 @@ router.get("/", async (req, res) => {
             time_commitment,
         } = req.query;
 
-        const offset = (page - 1) * limit;
-
         // Base query
         let query = supabase
             .from("projects")
             .select(
                 `
-        id,
-        owner_id,
-        title,
-        description,
-        tags,
-        looking_for,
-        is_active,
-        created_at,
-        users!projects_owner_id_fkey (
           id,
-          username,
-          email,
-          role,
-          experience,
-          time_commitment
-        )
-      `,
-                { count: "exact" } // enables total result count
+          owner_id,
+          title,
+          description,
+          tags,
+          looking_for,
+          is_active,
+          created_at,
+          users!projects_owner_id_fkey (
+            id,
+            username,
+            email,
+            role,
+            experience,
+            time_commitment
+          )
+        `
             )
             .eq("is_active", is_active === "true")
-            .order("created_at", { ascending: false })
-            .range(offset, offset + limit - 1);
+            .order("created_at", { ascending: false });
 
         // Filter by tags
         if (tags) {
@@ -125,7 +118,7 @@ router.get("/", async (req, res) => {
         if (time_commitment)
             query = query.eq("users.time_commitment", time_commitment.trim());
 
-        const { data, error, count } = await query;
+        const { data, error } = await query;
 
         if (error) {
             return res.status(500).json({ error: error.message });
@@ -133,12 +126,6 @@ router.get("/", async (req, res) => {
 
         res.json({
             projects: data,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total: count || 0,
-                totalPages: Math.ceil((count || 0) / limit),
-            },
             filters: {
                 tags,
                 looking_for,
@@ -146,12 +133,14 @@ router.get("/", async (req, res) => {
                 experience,
                 time_commitment,
             },
+            count: data?.length || 0,
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to fetch projects" });
     }
 });
+
 
 // Get a specific project by ID
 router.get("/:id", async (req, res) => {
