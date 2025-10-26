@@ -150,6 +150,8 @@ router.get("/successful", requireAuth, async (req, res) => {
 // Get received requests (requests to user's projects)
 router.get("/received", requireAuth, async (req, res) => {
     try {
+        console.log('Fetching received requests for user:', req.user.id);
+        
         const { data, error } = await supabase
             .from('applications')
             .select(`
@@ -159,10 +161,11 @@ router.get("/received", requireAuth, async (req, res) => {
                 blurb,
                 status,
                 created_at,
-                projects (
+                projects!inner (
                     id,
                     title,
-                    description
+                    description,
+                    owner_id
                 ),
                 users!applications_user_id_fkey (
                     id,
@@ -180,14 +183,18 @@ router.get("/received", requireAuth, async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) {
+            console.error('Error fetching received requests:', error);
             return res.status(500).json({ error: error.message });
         }
 
+        console.log('Found', data.length, 'received requests');
+        
         res.json({
             received_requests: data,
             count: data.length
         });
     } catch (error) {
+        console.error('Exception in /received:', error);
         res.status(500).json({ error: 'Failed to fetch received requests' });
     }
 });
@@ -403,6 +410,138 @@ router.get("/project/:projectId", requireAuth, async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch project applications' });
+    }
+});
+
+// Get matches (both successful applications and approved applications)
+router.get("/matches", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get successful applications (where user applied and was accepted)
+        const { data: successfulApps, error: successfulError } = await supabase
+            .from('applications')
+            .select(`
+                id,
+                project_id,
+                blurb,
+                status,
+                created_at,
+                projects (
+                    id,
+                    title,
+                    description,
+                    tags,
+                    looking_for,
+                    users!projects_owner_id_fkey (
+                        id,
+                        username,
+                        email,
+                        socials
+                    )
+                )
+            `)
+            .eq('user_id', userId)
+            .eq('status', 'accepted')
+            .order('created_at', { ascending: false });
+
+        if (successfulError) {
+            console.error('Successful apps error:', successfulError);
+            return res.status(500).json({ error: `Successful apps error: ${successfulError.message}` });
+        }
+
+        // Get approved applications (where user's project received accepted applications)
+        const { data: approvedApps, error: approvedError } = await supabase
+            .from('applications')
+            .select(`
+                id,
+                project_id,
+                user_id,
+                blurb,
+                status,
+                created_at,
+                projects (
+                    id,
+                    title,
+                    description,
+                    tags,
+                    looking_for
+                ),
+                users!applications_user_id_fkey (
+                    id,
+                    username,
+                    email,
+                    role,
+                    experience,
+                    time_commitment,
+                    socials,
+                    tech_tags
+                )
+            `)
+            .eq('projects.owner_id', userId)
+            .eq('status', 'accepted')
+            .order('created_at', { ascending: false });
+
+        if (approvedError) {
+            console.error('Approved apps error:', approvedError);
+            return res.status(500).json({ error: `Approved apps error: ${approvedError.message}` });
+        }
+
+        // Transform data to match the expected format
+        const matches = [
+            // Successful applications (user was accepted to projects)
+            ...(successfulApps || []).map(app => ({
+                id: app.id,
+                type: 'successful',
+                project: {
+                    id: app.projects?.id,
+                    title: app.projects?.title || 'Unknown Project',
+                    description: app.projects?.description || '',
+                    tags: app.projects?.tags || [],
+                    looking_for: app.projects?.looking_for || []
+                },
+                user: {
+                    id: app.projects?.users?.id,
+                    username: app.projects?.users?.username || 'Unknown User',
+                    email: app.projects?.users?.email || '',
+                    socials: app.projects?.users?.socials || {}
+                },
+                created_at: app.created_at
+            })),
+            // Approved applications (user's projects got accepted applications)
+            ...(approvedApps || []).map(app => ({
+                id: app.id,
+                type: 'approved',
+                project: {
+                    id: app.projects?.id,
+                    title: app.projects?.title || 'Unknown Project',
+                    description: app.projects?.description || '',
+                    tags: app.projects?.tags || [],
+                    looking_for: app.projects?.looking_for || []
+                },
+                user: {
+                    id: app.users?.id,
+                    username: app.users?.username || 'Unknown User',
+                    email: app.users?.email || '',
+                    role: app.users?.role,
+                    experience: app.users?.experience,
+                    time_commitment: app.users?.time_commitment,
+                    socials: app.users?.socials || {},
+                    tech_tags: app.users?.tech_tags || []
+                },
+                created_at: app.created_at
+            }))
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        res.json({
+            matches: matches,
+            count: matches.length,
+            successful_count: successfulApps?.length || 0,
+            approved_count: approvedApps?.length || 0
+        });
+    } catch (error) {
+        console.error('Error fetching matches:', error);
+        res.status(500).json({ error: `Failed to fetch matches: ${error.message}` });
     }
 });
 

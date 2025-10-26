@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Project {
@@ -29,6 +29,7 @@ const SwipeCard = ({
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [animateToButton, setAnimateToButton] = useState<'left' | 'right' | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const swipeHandled = useRef(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isInteractive || isAnimatingOut) return;
@@ -64,23 +65,29 @@ const SwipeCard = ({
       
       setIsAnimatingOut(true);
       
-      if (cardCenterX < orTextX) {
-        // Left of OR = Down to commit (like)
-        setAnimateToButton('left');
-        setTimeout(() => {
-          onSwipeRight();
-          setPosition({ x: 0, y: 0 });
-          setIsAnimatingOut(false);
-          setAnimateToButton(null);
-        }, 500);
-      } else {
+      // Prevent double execution
+      if (swipeHandled.current) return;
+      swipeHandled.current = true;
+      
+      if (cardCenterX > orTextX) {
         // Right of OR = Not my thing (pass)
         setAnimateToButton('right');
+        onSwipeLeft();
         setTimeout(() => {
-          onSwipeLeft();
           setPosition({ x: 0, y: 0 });
           setIsAnimatingOut(false);
           setAnimateToButton(null);
+          swipeHandled.current = false;
+        }, 500);
+      } else {
+        // Left of OR = Down to commit (like)
+        setAnimateToButton('left');
+        onSwipeRight();
+        setTimeout(() => {
+          setPosition({ x: 0, y: 0 });
+          setIsAnimatingOut(false);
+          setAnimateToButton(null);
+          swipeHandled.current = false;
         }, 500);
       }
     } else {

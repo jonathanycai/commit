@@ -58,6 +58,29 @@ export interface ProjectResponse {
   project: Project;
 }
 
+export interface Match {
+  id: string;
+  type: 'successful' | 'approved';
+  project: {
+    id: string;
+    title: string;
+    description: string;
+    tags?: string[];
+    looking_for?: string[];
+  };
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    role?: string;
+    experience?: string;
+    time_commitment?: string;
+    socials?: Record<string, string>;
+    tech_tags?: string[];
+  };
+  created_at: string;
+}
+
 class ApiService {
   private baseURL: string;
 
@@ -165,7 +188,7 @@ export const apiService = new ApiService(API_BASE_URL);
 
 // Helper function to get auth token from localStorage
 const getAuthToken = () => {
-  return localStorage.getItem('auth_token');
+  return localStorage.getItem('access_token');
 };
 
 // Helper function for API requests
@@ -206,8 +229,8 @@ export const recordProjectSwipe = async (userId: string, projectId: string, dire
   });
 };
 
-// Get matches for a user
-export const getMatches = async (userId: string) => {
+// Get matches for a user (swipe matches)
+export const getSwipeMatches = async (userId: string) => {
   return apiRequest(`/swipes/matches?userId=${userId}`);
 };
 
@@ -242,6 +265,7 @@ export const applyToProject = async (projectId: string) => {
     }),
   });
 };
+
 
 // Apply to a project (fixed version using access_token)
 export const applyToProjectBoard = async (projectId: string) => {
@@ -289,4 +313,45 @@ export const getFilteredProjects = async (filters: {
     params.append("time_commitment", filters.time_commitment.join(","));
 
   return apiRequest(`/projects?${params.toString()}`, { method: "GET" });
+  
+// Get matches (both successful and approved applications)
+export const getMatches = async (): Promise<{
+  matches: Match[];
+  count: number;
+  successful_count: number;
+  approved_count: number;
+}> => {
+  return apiRequest('/applications/matches');
+};
+
+// Get successful applications (where user was accepted to projects)
+export const getSuccessfulApplications = async () => {
+  return apiRequest('/applications/successful');
+};
+
+// Get received requests (applications to user's projects)
+export const getReceivedRequests = async () => {
+  return apiRequest('/applications/received');
+// Get received requests (requests to user's projects)
+export const getReceivedRequests = async () => {
+  return apiRequest('/applications/received');
+};
+
+// Get user's projects
+export const getMyProjects = async () => {
+  return apiRequest('/projects/my/projects');
+};
+
+// Approve an application
+export const approveApplication = async (applicationId: string) => {
+  return apiRequest(`/applications/${applicationId}/approve`, {
+    method: 'POST',
+  });
+};
+
+// Reject an application
+export const rejectApplication = async (applicationId: string) => {
+  return apiRequest(`/applications/${applicationId}/reject`, {
+    method: 'DELETE',
+  });
 };
