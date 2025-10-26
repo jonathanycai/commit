@@ -242,3 +242,11 @@ export const applyToProject = async (projectId: string) => {
     }),
   });
 };
+
+// Get all active projects
+export const getAllProjects = async () => {
+  return apiRequest('/projects', {
+    method: 'GET',
+  });
+};
+
