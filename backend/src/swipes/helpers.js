@@ -211,3 +211,27 @@ export function validateUUID(id) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(id);
 }
+
+// Helper function to create a notification
+export async function createNotification(receiverId, senderId, projectId, type, message) {
+    try {
+        const { data, error } = await supabase
+            .from("notifications")
+            .insert({
+                receiver_id: receiverId,
+                sender_id: senderId,
+                project_id: projectId,
+                type: type,
+                message: message,
+                is_read: false
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error("Error creating notification:", error);
+        throw error;
+    }
+}
