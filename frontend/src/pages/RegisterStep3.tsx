@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiService } from "@/lib/api";
 import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotCharging from "@/assets/mascot-charging.svg";
@@ -27,29 +29,38 @@ const RegisterStep3 = () => {
   const [discord, setDiscord] = useState("");
   const [github, setGithub] = useState("");
   const [devpost, setDevpost] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    navigate('/auth');
+    return null;
+  }
 
   const handleBack = () => {
     navigate('/register/step2');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
-      socialsSchema.parse({
+      const socialsData = {
         linkedin,
         discord,
         github,
         devpost,
-      });
+      };
+
+      socialsSchema.parse(socialsData);
       
-      // Store data
-      sessionStorage.setItem('registerStep3', JSON.stringify({
-        linkedin,
-        discord,
-        github,
-        devpost,
-      }));
+      setIsLoading(true);
+      
+      // Update user profile with socials data
+      await apiService.updateUserProfile({
+        socials: socialsData
+      });
       
       toast({
         title: "Registration complete!",
@@ -61,9 +72,9 @@ const RegisterStep3 = () => {
       sessionStorage.removeItem('registerStep2');
       sessionStorage.removeItem('registerStep3');
       
-      // Navigate back to auth page
+      // Navigate to home page
       setTimeout(() => {
-        navigate('/auth');
+        navigate('/');
       }, 500);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -72,7 +83,15 @@ const RegisterStep3 = () => {
           description: error.errors[0].message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Profile update failed",
+          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -202,10 +221,11 @@ const RegisterStep3 = () => {
       <div className="fixed bottom-4 z-20" style={{ right: '100px' }}>
         <Button
           onClick={handleSubmit}
+          disabled={isLoading}
           className="px-8 h-12 rounded-xl font-medium"
           style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
         >
-          Submit
+          {isLoading ? 'Updating Profile...' : 'Submit'}
         </Button>
       </div>
     </div>
