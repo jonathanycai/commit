@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Check, X, Mail, Linkedin, ExternalLink } from "lucide-react";
+import MatchCard from "@/components/profile/MatchCard";
+import { getMatches, Match } from "@/lib/api";
 import homepageBg from "@/assets/homepage-bg.svg";
 
 // Mock data for matches
@@ -84,10 +86,55 @@ const interestedPeople = [
   }
 ];
 
+
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("matches");
   const [currentRequestIndex, setCurrentRequestIndex] = useState(0);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const currentRequest = interestedPeople[currentRequestIndex];
+
+  // Fetch matches when component mounts
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        setLoading(true);
+        const response = await getMatches();
+        setMatches(response.matches || []);
+        setError(null);
+      } catch (err: unknown) {
+        console.error('Error fetching matches:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch matches');
+        // Fallback to mock data if API fails
+        setMatches(mockMatches.map(match => ({
+          id: match.id,
+          type: 'successful' as const,
+          project: {
+            id: match.id,
+            title: match.title,
+            description: match.description,
+            tags: match.roles,
+            looking_for: match.roles
+          },
+          user: {
+            id: match.id,
+            username: match.creator,
+            email: match.contact.email,
+            socials: {
+              discord: match.contact.discord,
+              linkedin: match.contact.linkedin
+            }
+          },
+          created_at: new Date().toISOString()
+        })));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, []);
 
   const handlePrevious = () => {
     setCurrentRequestIndex((prev) => (prev > 0 ? prev - 1 : interestedPeople.length - 1));
@@ -163,91 +210,23 @@ const Profile = () => {
 
             {activeTab === "matches" && (
               <div className="mt-8 space-y-4">
-                {mockMatches.map((match) => (
-                  <div 
-                    key={match.id}
-                    className="rounded-2xl p-[2px]"
-                    style={{ 
-                      background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
-                    }}
-                  >
-                    <div 
-                      className="rounded-2xl p-6"
-                      style={{ 
-                        backgroundColor: 'rgba(20, 22, 35, 0.95)',
-                        backdropFilter: 'blur(10px)',
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="space-y-2">
-                          <h2 className="text-2xl font-bold text-white">{match.title}</h2>
-                          <div className="flex flex-wrap gap-2">
-                            {match.roles.map((role, idx) => (
-                              <span 
-                                key={idx}
-                                className="px-3 py-1 rounded-lg text-xs font-medium"
-                                style={{ 
-                                  backgroundColor: role === 'Designer' ? '#5B7FFF' : role === 'Intermediate' ? '#A6F4C5' : '#79B1DF',
-                                  color: '#111118'
-                                }}
-                              >
-                                {role}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-gradient-primary" />
-                          <span className="text-sm font-medium text-white">{match.creator}</span>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-white/90 leading-relaxed mb-4">
-                        {match.description}
-                      </p>
-
-                      <div className="space-y-3">
-                        <p 
-                          className="text-base font-medium"
-                          style={{ color: '#A79CFF' }}
-                        >
-                          Reach out to {match.creator} by:
-                        </p>
-                        <div className="flex items-center gap-6">
-                          <a 
-                            href={`mailto:${match.contact.email}`}
-                            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
-                          >
-                            <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center">
-                              <Mail className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="text-sm">{match.contact.email}</span>
-                          </a>
-                          
-                          <div className="flex items-center gap-2 text-white">
-                            <div className="h-8 w-8 rounded-full" style={{ backgroundColor: '#5865F2' }}>
-                              <svg viewBox="0 0 24 24" className="h-8 w-8 p-1.5" fill="white">
-                                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                              </svg>
-                            </div>
-                            <span className="text-sm">{match.contact.discord}</span>
-                          </div>
-
-                          <a 
-                            href="#"
-                            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
-                          >
-                            <div className="h-8 w-8 rounded-full" style={{ backgroundColor: '#0A66C2' }}>
-                              <Linkedin className="h-8 w-8 p-1.5" />
-                            </div>
-                            <span className="text-sm">{match.contact.linkedin}</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-white/60">Loading matches...</div>
                   </div>
-                ))}
+                ) : error ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-red-400">Error: {error}</div>
+                  </div>
+                ) : matches.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-white/60">No matches yet. Start swiping to find your perfect project!</div>
+                  </div>
+                ) : (
+                  matches.map((match) => (
+                    <MatchCard key={match.id} match={match} />
+                  ))
+                )}
               </div>
             )}
 
