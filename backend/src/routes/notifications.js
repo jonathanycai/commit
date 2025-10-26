@@ -9,47 +9,46 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Create a new notification
+/**
+ * 📨 Create a new notification
+ * Body: { receiver_id, project_id, type }
+ */
 router.post("/", requireAuth, async (req, res) => {
     try {
-        const { receiver_id, project_id, type, message } = req.body;
+        const { receiver_id, project_id, type } = req.body;
         const sender_id = req.user.id; // current logged-in user
 
-        // Validate input
-        if (!receiver_id || !project_id || !type || !message) {
+        if (!receiver_id || !project_id || !type) {
             return res.status(400).json({
-                error: "receiver_id, project_id, type, and message are required",
+                error: "receiver_id, project_id, and type are required",
             });
         }
 
-        // Insert new notification
         const { data, error } = await supabase
             .from("notifications")
-            .insert([
-                {
-                    receiver_id,
-                    sender_id,
-                    project_id,
-                    type,
-                    message,
-                },
-            ])
+            .insert({
+                receiver_id,
+                sender_id,
+                project_id,
+                type,
+                message: "", // optional placeholder message
+            })
             .select(
                 `
-        id,
-        receiver_id,
-        sender_id,
-        project_id,
-        type,
-        message,
-        is_read,
-        created_at,
-        users!notifications_sender_id_fkey (
           id,
-          username,
-          email
-        )
-      `
+          receiver_id,
+          sender_id,
+          project_id,
+          type,
+          message,
+          is_read,
+          created_at,
+          users!notifications_sender_id_fkey (
+            id,
+            username,
+            email
+          )
+        `
             )
             .single();
 
@@ -62,6 +61,47 @@ router.post("/", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("Error creating notification:", err.message);
         res.status(500).json({ error: "Failed to create notification" });
+    }
+});
+
+/**
+ * 📬 Get all notifications for the current user
+ */
+router.get("/", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const { data, error } = await supabase
+            .from("notifications")
+            .select(
+                `
+          id,
+          receiver_id,
+          sender_id,
+          project_id,
+          type,
+          message,
+          is_read,
+          created_at,
+          users:sender_id (
+            id,
+            username,
+            email
+          )
+        `
+            )
+            .eq("receiver_id", userId)
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        res.json({
+            notifications: data,
+            count: data.length,
+        });
+    } catch (err) {
+        console.error("Error fetching notifications:", err.message);
+        res.status(500).json({ error: "Failed to fetch notifications" });
     }
 });
 
