@@ -13,7 +13,7 @@ const supabase = createClient(
 // Create a new project
 router.post("/", requireAuth, projectCreationLimiter, async (req, res) => {
     try {
-        const { title, description, tags, looking_for } = req.body;
+        const { title, project_name, description, tags, looking_for } = req.body;
 
         if (!title) {
             return res.status(400).json({ error: 'Project title is required' });
@@ -25,6 +25,7 @@ router.post("/", requireAuth, projectCreationLimiter, async (req, res) => {
             .insert({
                 owner_id: req.user.id,
                 title,
+                project_name: project_name || '',
                 description: description || '',
                 tags: tags || [],
                 looking_for: looking_for || [],
@@ -34,6 +35,7 @@ router.post("/", requireAuth, projectCreationLimiter, async (req, res) => {
                 id,
                 owner_id,
                 title,
+                project_name,
                 description,
                 tags,
                 looking_for,
@@ -160,6 +162,7 @@ router.get("/:id", async (req, res) => {
                 id,
                 owner_id,
                 title,
+                project_name,
                 description,
                 tags,
                 looking_for,
@@ -193,7 +196,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
     try {
         const projectId = req.params.id;
-        const { title, description, tags, looking_for, is_active } = req.body;
+        const { title, project_name, description, tags, looking_for, is_active } = req.body;
 
         // Check if project exists and user owns it
         const { data: existingProject, error: fetchError } = await supabase
@@ -215,6 +218,7 @@ router.put("/:id", requireAuth, async (req, res) => {
             .from('projects')
             .update({
                 title,
+                project_name: project_name || '',
                 description,
                 tags: tags || [],
                 looking_for: looking_for || [],
@@ -225,6 +229,7 @@ router.put("/:id", requireAuth, async (req, res) => {
                 id,
                 owner_id,
                 title,
+                project_name,
                 description,
                 tags,
                 looking_for,
@@ -300,6 +305,7 @@ router.get("/my/projects", requireAuth, async (req, res) => {
                 id,
                 owner_id,
                 title,
+                project_name,
                 description,
                 tags,
                 looking_for,
@@ -335,6 +341,7 @@ router.get("/search/:query", async (req, res) => {
                 id,
                 owner_id,
                 title,
+                project_name,
                 description,
                 tags,
                 looking_for,
