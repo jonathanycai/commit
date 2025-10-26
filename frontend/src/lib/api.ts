@@ -266,29 +266,8 @@ export const applyToProject = async (projectId: string) => {
   });
 };
 
-
-// Apply to a project (fixed version using access_token)
-export const applyToProjectBoard = async (projectId: string) => {
-  // ✅ Get token from localStorage (where your login actually stores it)
-  const token =
-    localStorage.getItem("access_token") || localStorage.getItem("auth_token");
-
-  if (!token) {
-    throw new Error("No access token found. Please log in first.");
-  }
-
-  // ✅ Make request with proper Authorization header
-  const response = await fetch(`${API_BASE_URL}/applications`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`, // attach token manually
-    },
-    body: JSON.stringify({
-      project_id: projectId,
-    }),
-  });
-};
+// Apply to a project from the Projects page
+export const applyToProjectBoard = applyToProject;
 
 
 // Get all active projects
@@ -313,6 +292,25 @@ export const getFilteredProjects = async (filters: {
     params.append("time_commitment", filters.time_commitment.join(","));
 
   return apiRequest(`/projects?${params.toString()}`, { method: "GET" });
+};
+
+// Create a new project
+export const createProject = async (projectData: {
+  title: string;
+  description?: string;
+  tags?: string[];
+  looking_for?: string[];
+}) => {
+  return apiRequest('/projects', {
+    method: 'POST',
+    body: JSON.stringify(projectData),
+  });
+};
+
+// Get all projects
+export const getProjects = async () => {
+  return apiRequest('/projects');
+};
   
 // Get matches (both successful and approved applications)
 export const getMatches = async (): Promise<{
@@ -330,9 +328,6 @@ export const getSuccessfulApplications = async () => {
 };
 
 // Get received requests (applications to user's projects)
-export const getReceivedRequests = async () => {
-  return apiRequest('/applications/received');
-// Get received requests (requests to user's projects)
 export const getReceivedRequests = async () => {
   return apiRequest('/applications/received');
 };

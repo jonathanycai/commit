@@ -8,37 +8,58 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { toast } from "sonner";
-import {
-  getAllProjects,
-  getFilteredProjects,
-  applyToProjectBoard,
-} from "@/lib/api";
+import { getAllProjects, getFilteredProjects, applyToProjectBoard, createProject } from "@/lib/api";
+
+// Options for checkboxes
+const experienceOptions = ['Beginner', 'Intermediate', 'Advanced'];
+const roleOptions = ['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'];
+const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
+
+// Mock data
+const mockProjects = [
+  {
+    id: "1",
+    title: "Title of Project",
+    description: "This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for. This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.",
+    creator: "Kashish Garg",
+    roles: ["Designer", "Idea Guy", "Front-End"],
+  },
+  {
+    id: "2",
+    title: "Title of Project",
+    description: "This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for. This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.",
+    creator: "Kashish Garg",
+    roles: ["Designer", "Idea Guy", "Front-End"],
+  },
+  {
+    id: "3",
+    title: "Title of Project",
+    description: "This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for. This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.",
+    creator: "Kashish Garg",
+    roles: ["Designer", "Idea Guy", "Front-End"],
+  },
+];
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null); // track which project is applying
 
-  // Filters + search
+  // Filters + search (for sidebar - multi-select)
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string[]>([]);
+  const [filterRoles, setFilterRoles] = useState<string[]>([]);
+  const [filterExperience, setFilterExperience] = useState<string[]>([]);
+  const [filterTime, setFilterTime] = useState<string[]>([]);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
-
-  // Toggle filter handler
-  const handleFilterChange = (type: string, value: string) => {
-    const toggle = (arr: string[], val: string) =>
-      arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
-
-    if (type === "role") setSelectedRoles((prev) => toggle(prev, value));
-    if (type === "experience") setSelectedExperience((prev) => toggle(prev, value));
-    if (type === "time") setSelectedTime((prev) => toggle(prev, value));
-  };
+  
+  // State for dialog checkboxes (single select for exp/time, multi for roles)
+  const [dialogExperience, setDialogExperience] = useState<string>("");
+  const [dialogRoles, setDialogRoles] = useState<string[]>([]);
+  const [dialogTimeCommitment, setDialogTimeCommitment] = useState<string>("");
 
   // Fetch projects
   useEffect(() => {
@@ -47,16 +68,16 @@ const Projects = () => {
       try {
         const hasFilters =
           searchQuery.trim() ||
-          selectedRoles.length > 0 ||
-          selectedExperience.length > 0 ||
-          selectedTime.length > 0;
+          filterRoles.length > 0 ||
+          filterExperience.length > 0 ||
+          filterTime.length > 0;
 
         const data = hasFilters
           ? await getFilteredProjects({
             search: searchQuery,
-            role: selectedRoles,
-            experience: selectedExperience,
-            time_commitment: selectedTime,
+            role: filterRoles,
+            experience: filterExperience,
+            time_commitment: filterTime,
           })
           : await getAllProjects();
 
@@ -70,35 +91,79 @@ const Projects = () => {
     };
 
     fetchProjects();
-  }, [searchQuery, selectedRoles, selectedExperience, selectedTime]);
+  }, [searchQuery, filterRoles, filterExperience, filterTime]);
 
   const handleApply = async (projectId: string) => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      toast.error("Please log in to apply for a project!");
-      return;
-    }
-
+    setApplying(projectId);
     try {
       await applyToProjectBoard(projectId);
-      toast.success("You’ve successfully applied to this project!");
-    } catch (err: any) {
+      toast.success("You've successfully applied to this project!");
+    } catch (err) {
       console.error("Failed to apply:", err);
-      toast.error(err.message || "Failed to apply");
+      const errorMessage = err instanceof Error ? err.message : "Failed to apply";
+      if (errorMessage.includes("No token") || errorMessage.includes("Unauthorized")) {
+        toast.error("Please log in to apply for a project!");
+      } else if (errorMessage.includes("already exists")) {
+        toast.error("You've already applied to this project");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setApplying(null);
     }
   };
 
 
-  // Submit dummy handler for dialog
-  const handleSubmit = () => {
+  // Submit handler for creating project
+  const handleSubmit = async () => {
     if (!projectTitle || !projectDescription) {
       toast.error("Please fill in all required fields");
       return;
     }
-    toast.success("Project posted successfully!");
-    setIsDialogOpen(false);
-    setProjectTitle("");
-    setProjectDescription("");
+
+    try {
+      const projectData = {
+        title: projectTitle,
+        description: projectDescription,
+        tags: [],
+        looking_for: dialogRoles,
+      };
+
+      await createProject(projectData);
+      toast.success("Project posted successfully!");
+      setIsDialogOpen(false);
+      setProjectTitle("");
+      setProjectDescription("");
+      setDialogExperience("");
+      setDialogRoles([]);
+      setDialogTimeCommitment("");
+      
+      // Refresh projects list
+      const response = await getAllProjects();
+      setProjects(response.projects || []);
+    } catch (err) {
+      console.error("Error creating project:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to create project";
+      if (errorMessage.includes("No token") || errorMessage.includes("Unauthorized")) {
+        toast.error("Please log in to create a project");
+      } else {
+        toast.error(errorMessage);
+      }
+    }
+  };
+
+  const toggleExperience = (level: string) => {
+    setDialogExperience(prev => prev === level ? "" : level);
+  };
+
+  const toggleRole = (role: string) => {
+    setDialogRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const toggleTimeCommitment = (time: string) => {
+    setDialogTimeCommitment(prev => prev === time ? "" : time);
   };
 
   return (
@@ -151,14 +216,13 @@ const Projects = () => {
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Experience Level</Label>
                 <div className="space-y-3">
-                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
+                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
                     <div key={level} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={level}
-                        checked={selectedExperience.includes(level)}
-                        onCheckedChange={() => handleFilterChange("experience", level)}
-                      />
-                      <label htmlFor={level} className="text-sm font-medium cursor-pointer">
+                      <Checkbox id={level} />
+                      <label
+                        htmlFor={level}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
                         {level}
                       </label>
                     </div>
@@ -170,21 +234,13 @@ const Projects = () => {
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Role</Label>
                 <div className="space-y-3">
-                  {[
-                    "Front-End",
-                    "Back-End",
-                    "Full Stack",
-                    "Designer",
-                    "Idea Guy",
-                    "Pitch Wizard",
-                  ].map((role) => (
+                  {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
                     <div key={role} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={role}
-                        checked={selectedRoles.includes(role)}
-                        onCheckedChange={() => handleFilterChange("role", role)}
-                      />
-                      <label htmlFor={role} className="text-sm font-medium cursor-pointer">
+                      <Checkbox id={role} />
+                      <label
+                        htmlFor={role}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
                         {role}
                       </label>
                     </div>
@@ -196,14 +252,13 @@ const Projects = () => {
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Time Commitment</Label>
                 <div className="space-y-3">
-                  {["1-2 hrs/week", "3-4 hrs/week", "5-6 hrs/week"].map((time) => (
+                  {['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week'].map((time) => (
                     <div key={time} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={time}
-                        checked={selectedTime.includes(time)}
-                        onCheckedChange={() => handleFilterChange("time", time)}
-                      />
-                      <label htmlFor={time} className="text-sm font-medium cursor-pointer">
+                      <Checkbox id={time} />
+                      <label
+                        htmlFor={time}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
                         {time}
                       </label>
                     </div>
@@ -302,11 +357,11 @@ const Projects = () => {
 
       {/* Post Project Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
+        <DialogContent 
           className="max-w-4xl p-0 gap-0 border-2 font-lexend backdrop-blur-xl"
-          style={{
-            backgroundColor: "rgba(30, 33, 57, 0.4)",
-            borderColor: "#6789EC",
+          style={{ 
+            backgroundColor: 'rgba(30, 33, 57, 0.4)',
+            borderColor: '#6789EC'
           }}
         >
           <div className="p-8 space-y-6">
@@ -331,12 +386,75 @@ const Projects = () => {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-sm font-semibold">Experience Level</Label>
+                <div className="flex flex-wrap gap-3">
+                  {experienceOptions.map((level) => (
+                    <div key={level} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`dialog-exp-${level}`} 
+                        checked={dialogExperience === level} 
+                        onCheckedChange={() => toggleExperience(level)}
+                      />
+                      <label
+                        htmlFor={`dialog-exp-${level}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {level}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Role</Label>
+                <div className="flex flex-wrap gap-3">
+                  {roleOptions.map((role) => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`dialog-role-${role}`} 
+                        checked={dialogRoles.includes(role)} 
+                        onCheckedChange={() => toggleRole(role)}
+                      />
+                      <label
+                        htmlFor={`dialog-role-${role}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {role}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Time Commitment</Label>
+                <div className="flex flex-wrap gap-3">
+                  {timeCommitmentOptions.map((time) => (
+                    <div key={time} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`dialog-time-${time}`} 
+                        checked={dialogTimeCommitment === time} 
+                        onCheckedChange={() => toggleTimeCommitment(time)}
+                      />
+                      <label
+                        htmlFor={`dialog-time-${time}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {time}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-semibold">
                   Description of the project you want to build!
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe your project..."
+                  placeholder="This is a project that..."
                   value={projectDescription}
                   onChange={(e) => setProjectDescription(e.target.value)}
                   className="bg-background/50 border-border rounded-xl min-h-[150px] resize-none"

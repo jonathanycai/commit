@@ -94,7 +94,6 @@ const Profile = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const currentRequest = interestedPeople[currentRequestIndex];
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
 
@@ -208,9 +207,10 @@ const Profile = () => {
       if (currentRequestIndex >= receivedRequests.length - 1 && currentRequestIndex > 0) {
         setCurrentRequestIndex(currentRequestIndex - 1);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error approving application:', error);
-      toast.error(error.message || 'Failed to approve application');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to approve application';
+      toast.error(errorMessage);
     }
   };
 
@@ -229,9 +229,10 @@ const Profile = () => {
       if (currentRequestIndex >= receivedRequests.length - 1 && currentRequestIndex > 0) {
         setCurrentRequestIndex(currentRequestIndex - 1);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error rejecting application:', error);
-      toast.error(error.message || 'Failed to reject application');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reject application';
+      toast.error(errorMessage);
     }
   };
 
