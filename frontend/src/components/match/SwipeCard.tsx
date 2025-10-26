@@ -65,7 +65,7 @@ const SwipeCard = ({
       setIsAnimatingOut(true);
       
       if (cardCenterX < orTextX) {
-        // Left of OR = Down to commit
+        // Left of OR = Down to commit (like)
         setAnimateToButton('left');
         setTimeout(() => {
           onSwipeRight();
@@ -74,7 +74,7 @@ const SwipeCard = ({
           setAnimateToButton(null);
         }, 500);
       } else {
-        // Right of OR = Not my thing
+        // Right of OR = Not my thing (pass)
         setAnimateToButton('right');
         setTimeout(() => {
           onSwipeLeft();

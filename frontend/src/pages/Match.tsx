@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import SwipeCard from "@/components/match/SwipeCard";
 import { Button } from "@/components/ui/button";
@@ -7,62 +7,144 @@ import { X } from "lucide-react";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotHappy from "@/assets/mascot-happy-new.svg";
 import mascotSad from "@/assets/mascot-sad.svg";
+import { getNextProject, recordProjectSwipe, applyToProject } from "@/lib/api";
 
-// Mock data
-const mockProjects = [
-  {
-    id: "1",
-    title: "Title of Project",
-    creator: "Kashish Garg",
-    roles: ["Designer", "Idea Guy", "Front-End"],
-    timestamp: "30 mins ago",
-    description: "This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for. This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.\n\nSomething else that's really important yay :)",
-  },
-  {
-    id: "2",
-    title: "E-Commerce Platform",
-    creator: "Alex Chen",
-    roles: ["Back-End", "Full Stack"],
-    timestamp: "1 hour ago",
-    description: "Building a modern e-commerce platform with real-time inventory management and AI-powered recommendations. Looking for developers who are passionate about building scalable systems.",
-  },
-  {
-    id: "3",
-    title: "Social Media App",
-    creator: "Sarah Johnson",
-    roles: ["Designer", "Front-End"],
-    timestamp: "2 hours ago",
-    description: "Creating a next-gen social platform focused on authentic connections. Need creative minds who want to reimagine how people interact online.",
-  },
-  {
-    id: "4",
-    title: "AI Writing Assistant",
-    creator: "Mike Torres",
-    roles: ["Back-End", "ML Engineer"],
-    timestamp: "3 hours ago",
-    description: "Building an AI-powered writing tool that helps content creators. Looking for developers interested in NLP and machine learning.",
-  },
-];
+interface Project {
+  id: string;
+  title: string;
+  creator: string;
+  roles: string[];
+  timestamp: string;
+  description: string;
+}
 
 const Match = () => {
+  const [currentProjects, setCurrentProjects] = useState<Project[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const currentProject = mockProjects[currentIndex];
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  // TODO: Get actual user ID from auth context
+  const userId = localStorage.getItem('user_id') || '550e8400-e29b-41d4-a716-446655440000';
 
-  const handleSwipeLeft = () => {
-    toast.error("Not my thing");
-    if (currentIndex < mockProjects.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      toast.info("No more projects!");
+  const currentProject = currentProjects[currentIndex];
+
+  // Fetch initial project when component mounts
+  useEffect(() => {
+    // Check if user is logged in
+    if (!userId) {
+      toast.error("Please log in to view projects");
+      return;
+    }
+    fetchNextProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchNextProject = async () => {
+    try {
+      setIsLoading(true);
+      
+      const project = await getNextProject(userId);
+      
+      if (project.message || !project.id) {
+        // No more projects available
+        setIsLoading(false);
+        return;
+      }
+
+      // Transform API response to match SwipeCard interface
+      const transformedProject: Project = {
+        id: project.id,
+        title: project.title || 'Untitled Project',
+        creator: project.users?.username || project.users?.email || 'Unknown Creator',
+        roles: [
+          ...(project.looking_for || []),
+          ...(project.tags || []).slice(0, 2)
+        ],
+        timestamp: formatTimestamp(project.created_at),
+        description: project.description || 'No description available.',
+      };
+
+      setCurrentProjects(prev => [...prev, transformedProject]);
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error fetching project:", error);
+      const errorMessage = error?.message || "Failed to load project";
+      toast.error(errorMessage);
+      setIsLoading(false);
     }
   };
 
-  const handleSwipeRight = () => {
-    toast.success("Down to commit! 🎉");
-    if (currentIndex < mockProjects.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      toast.info("No more projects!");
+  const formatTimestamp = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) return "Just now";
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${diffInSeconds >= 7200 ? 's' : ''} ago`;
+      return `${Math.floor(diffInSeconds / 86400)} day${diffInSeconds >= 172800 ? 's' : ''} ago`;
+    } catch {
+      return "Recently";
+    }
+  };
+
+  const handleSwipeLeft = async () => {
+    if (!currentProject || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      
+      // Record swipe as "pass"
+      await recordProjectSwipe(userId, currentProject.id, 'pass');
+      toast.error("Not my thing");
+      
+      // Move to next card or fetch new project
+      if (currentIndex < currentProjects.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        await fetchNextProject();
+      }
+    } catch (error: any) {
+      console.error("Error recording swipe:", error);
+      const errorMessage = error?.message || "Failed to record swipe";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSwipeRight = async () => {
+    if (!currentProject || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      
+      // Record swipe as "like"
+      await recordProjectSwipe(userId, currentProject.id, 'like');
+      
+      // Also create an application request to the project owner
+      try {
+        await applyToProject(currentProject.id);
+      } catch (appError: any) {
+        // Don't fail the swipe if application fails (e.g., already applied)
+        console.log("Application note:", appError);
+      }
+      
+      toast.success("Down to commit! 🎉");
+      
+      // Move to next card or fetch new project
+      if (currentIndex < currentProjects.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        await fetchNextProject();
+      }
+    } catch (error: any) {
+      console.error("Error recording swipe:", error);
+      const errorMessage = error?.message || "Failed to record swipe";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -84,10 +166,30 @@ const Match = () => {
           <div className="flex items-start justify-between gap-8">
             {/* Swipe Card Stack */}
             <div className="w-[550px] flex-shrink-0 relative" style={{ minHeight: '650px' }}>
-              {currentProject ? (
+              {isLoading ? (
+                <div 
+                  className="rounded-[32px] p-[3px]"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
+                  }}
+                >
+                  <div 
+                    className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: 'rgba(46, 52, 88, 0.7)',
+                      backdropFilter: 'blur(10px)',
+                    }}
+                  >
+                    <div className="text-center space-y-4">
+                      <h3 className="text-3xl font-bold text-white">Loading...</h3>
+                      <p className="text-white/60">Finding projects for you</p>
+                    </div>
+                  </div>
+                </div>
+              ) : currentProject ? (
                 <>
                   {/* Card 3 (back) */}
-                  {currentIndex + 2 < mockProjects.length && (
+                  {currentIndex + 2 < currentProjects.length && (
                     <div 
                       className="absolute top-6 left-0 right-0 transition-all duration-300"
                       style={{ 
@@ -97,7 +199,7 @@ const Match = () => {
                       }}
                     >
                       <SwipeCard
-                        project={mockProjects[currentIndex + 2]}
+                        project={currentProjects[currentIndex + 2]}
                         onSwipeLeft={() => {}}
                         onSwipeRight={() => {}}
                         isInteractive={false}
@@ -106,7 +208,7 @@ const Match = () => {
                   )}
                   
                   {/* Card 2 (middle) */}
-                  {currentIndex + 1 < mockProjects.length && (
+                  {currentIndex + 1 < currentProjects.length && (
                     <div 
                       className="absolute top-3 left-0 right-0 transition-all duration-300"
                       style={{ 
@@ -116,7 +218,7 @@ const Match = () => {
                       }}
                     >
                       <SwipeCard
-                        project={mockProjects[currentIndex + 1]}
+                        project={currentProjects[currentIndex + 1]}
                         onSwipeLeft={() => {}}
                         onSwipeRight={() => {}}
                         isInteractive={false}
@@ -133,7 +235,7 @@ const Match = () => {
                       project={currentProject}
                       onSwipeLeft={handleSwipeLeft}
                       onSwipeRight={handleSwipeRight}
-                      isInteractive={true}
+                      isInteractive={!isProcessing}
                     />
                   </div>
                 </>
@@ -195,10 +297,11 @@ const Match = () => {
                   />
                   <Button 
                     onClick={handleSwipeRight}
+                    disabled={isProcessing || !currentProject}
                     className="h-12 px-6 rounded-xl font-medium"
                     style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
                   >
-                    ✓ Down to commit
+                    {isProcessing ? 'Processing...' : '✓ Down to commit'}
                   </Button>
                 </div>
 
@@ -214,12 +317,13 @@ const Match = () => {
                   />
                   <Button 
                     onClick={handleSwipeLeft}
+                    disabled={isProcessing || !currentProject}
                     variant="outline"
                     className="h-12 px-6 rounded-xl font-medium border-2"
                     style={{ borderColor: '#5B7FFF', color: '#5B7FFF' }}
                   >
                     <X className="w-4 h-4 mr-2" />
-                    Not my thing
+                    {isProcessing ? 'Processing...' : 'Not my thing'}
                   </Button>
                 </div>
               </div>

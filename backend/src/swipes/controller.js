@@ -4,7 +4,8 @@ import {
     getRandomUser, 
     recordSwipe, 
     detectMatch, 
-    validateUUID 
+    validateUUID,
+    createNotification
 } from "./helpers.js";
 
 // Controller for getting next project for user swiping
@@ -100,22 +101,36 @@ export async function recordProjectSwipeController(req, res) {
         // Record the swipe
         const newSwipe = await recordSwipe(userId, project_id, direction, 'project');
 
-        // Check for match if it's a like
-        let matchResult = false;
-        if (direction === 'like') {
-            matchResult = await detectMatch(userId, project_id, 'project');
+        // Send notification to project owner if user liked the project
+        if (direction === "like") {
+            try {
+                // Get swiper's info for the notification
+                const { data: swiperInfo } = await supabase
+                    .from("users")
+                    .select("username, email")
+                    .eq("id", userId)
+                    .single();
+
+                // Create notification for project owner
+                await createNotification(
+                    project.owner_id,
+                    userId,
+                    project_id,
+                    "project_liked",
+                    `${swiperInfo?.username || "Someone"} liked your project`
+                );
+            } catch (notifErr) {
+                console.error("Error sending notification:", notifErr);
+                // Don't fail the swipe if notification fails
+            }
         }
 
+        // No match detection here - matches only happen when project owner approves
         const response = {
             success: true,
             swipe: newSwipe,
             message: direction === "like" ? "Project liked!" : "Project passed"
         };
-
-        if (matchResult) {
-            response.match = true;
-            response.project_id = project_id;
-        }
 
         res.json(response);
 
@@ -219,9 +234,23 @@ export async function recordUserSwipeController(req, res) {
         const newSwipe = await recordSwipe(project.owner_id, user_id, direction, 'user');
 
         // Check for match if it's a like
+        // Need to check if the user already liked this project
         let matchResult = false;
         if (direction === 'like') {
-            matchResult = await detectMatch(project.owner_id, user_id, 'user');
+            // Check if user has already swiped like on this project
+            const { data: userSwipe, error: userSwipeError } = await supabase
+                .from("swipes")
+                .select("id")
+                .eq("swiper_id", user_id)
+                .eq("target_project_id", project_id)
+                .eq("direction", "like")
+                .single();
+
+            if (userSwipeError && userSwipeError.code !== "PGRST116") {
+                console.error("Error checking user swipe:", userSwipeError);
+            } else {
+                matchResult = !!userSwipe; // Match if user already liked this project
+            }
         }
 
         const response = {
