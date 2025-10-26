@@ -7,14 +7,21 @@ import healthRoutes from "./routes/health.js";
 import applicationRoutes from "./routes/applications.js";
 import projectRoutes from "./routes/projects.js";
 import swipesRoutes from "./swipes/routes.js";
+import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Apply general rate limiting to all routes
+app.use(generalLimiter);
+
 // ===========================
 // ROUTE IMPORTS
 // ===========================
+
+// Rate limit status routes
+app.use("/rate-limit", rateLimitStatusRouter);
 
 // Health check routes
 app.use("/health", healthRoutes);

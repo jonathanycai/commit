@@ -1,6 +1,7 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuth } from "../middleware/auth.js";
+import { applicationLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const supabase = createClient(
 );
 
 // Send request to join a project
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, applicationLimiter, async (req, res) => {
     try {
         const { project_id, blurb } = req.body;
         
