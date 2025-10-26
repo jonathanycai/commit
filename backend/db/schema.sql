@@ -2,15 +2,16 @@
 -- USERS
 -- ===========================
 create table if not exists users (
-  id uuid primary key default gen_random_uuid(),          -- unique identifier for each user (matches Supabase Auth ID)
-  email text unique not null,                             -- user's email address (used for login / contact)
-  username text unique,                                   -- display name or handle shown on the platform
-  role text,                                              -- user's main role (e.g., "frontend", "backend", "designer")
-  experience text,                                        -- skill level ("beginner", "intermediate", "advanced")
-  time_commitment text,                                   -- how much time they can contribute (e.g., "5 hrs/week")
-  socials jsonb,                                          -- links to socials (e.g., { "discord": "", "linkedin": "" })
-  tech_tags text[] default '{}',                          -- list of technologies they use (e.g., ["react","nodejs"])
-  created_at timestamptz default now()                    -- timestamp of when the user profile was created
+  id uuid primary key default gen_random_uuid(),      -- unique identifier for each user
+  email text unique not null,                         -- user's email address (used for login)
+  username text unique,                               -- display name or handle
+  role text,                                          -- user's main role (e.g. "frontend", "backend", "mobile", "designer")
+  experience text,                                    -- skill level ("beginner", "intermediate", "advanced")
+  time_commitment text,                               -- how much time they can contribute (e.g. "5 hrs/week")
+  socials jsonb default '{}'::jsonb,                  -- links to socials (e.g. { "discord": "", "linkedin": "" })
+  tech_tags text[] default '{}',                      -- list of technologies (e.g. ["react","nodejs","python"])
+  project_links text[] default '{}',                  -- NEW: URLs to user's past projects, portfolios, or demos
+  created_at timestamptz default now()                -- timestamp when the user joined
 );
 
 -- ===========================
