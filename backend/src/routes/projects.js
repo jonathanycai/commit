@@ -70,6 +70,7 @@ router.get("/", async (req, res) => {
             role,
             experience,
             time_commitment,
+            search, // 🔍 new search param
         } = req.query;
 
         // Base query
@@ -77,26 +78,33 @@ router.get("/", async (req, res) => {
             .from("projects")
             .select(
                 `
+        id,
+        owner_id,
+        title,
+        description,
+        tags,
+        looking_for,
+        is_active,
+        created_at,
+        users!projects_owner_id_fkey (
           id,
-          owner_id,
-          title,
-          description,
-          tags,
-          looking_for,
-          is_active,
-          created_at,
-          users!projects_owner_id_fkey (
-            id,
-            username,
-            email,
-            role,
-            experience,
-            time_commitment
-          )
-        `
+          username,
+          email,
+          role,
+          experience,
+          time_commitment
+        )
+      `
             )
             .eq("is_active", is_active === "true")
             .order("created_at", { ascending: false });
+
+        // 🔍 Title or description search (case-insensitive)
+        if (search && search.trim()) {
+            query = query.or(
+                `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`
+            );
+        }
 
         // Filter by tags
         if (tags) {
@@ -116,6 +124,7 @@ router.get("/", async (req, res) => {
         if (time_commitment)
             query = query.eq("users.time_commitment", time_commitment.trim());
 
+        // Execute query
         const { data, error } = await query;
 
         if (error) {
@@ -130,6 +139,7 @@ router.get("/", async (req, res) => {
                 role,
                 experience,
                 time_commitment,
+                search,
             },
             count: data?.length || 0,
         });
@@ -138,6 +148,7 @@ router.get("/", async (req, res) => {
         res.status(500).json({ error: "Failed to fetch projects" });
     }
 });
+
 
 
 // Get a specific project by ID
