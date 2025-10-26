@@ -83,7 +83,7 @@ router.get("/", requireAuth, async (req, res) => {
           message,
           is_read,
           created_at,
-          users:sender_id (
+          users!notifications_sender_id_fkey (
             id,
             username,
             email
