@@ -3,30 +3,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import homepageBg from "@/assets/homepage-bg.svg";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, register } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      // Login flow - navigate to home
-      navigate('/');
-    } else {
-      // Signup flow - navigate to registration step 1
-      navigate('/register/step1');
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        await login(email, password);
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate('/');
+      } else {
+        await register(email, password);
+        toast({
+          title: "Registration successful",
+          description: "Account created! Let's complete your profile.",
+        });
+        navigate('/register/step1');
+      }
+    } catch (error) {
+      toast({
+        title: "Authentication failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = () => {
     toast({
-      title: "Authentication not configured",
-      description: "Backend authentication is not set up yet. This is UI only.",
+      title: "Google authentication not configured",
+      description: "Please use email and password for now.",
     });
   };
 
@@ -83,7 +106,7 @@ const Auth = () => {
                 ready, set, commit.
               </h2>
               <p className="text-2xl" style={{ color: '#9D9CFF' }}>
-                with a login.
+                with a {isLogin ? 'login' : 'register'}.
               </p>
             </div>
 
@@ -118,10 +141,11 @@ const Auth = () => {
 
               <Button 
                 type="submit"
+                disabled={isLoading}
                 className="w-full h-11 rounded-xl font-medium"
                 style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
               >
-                Login
+                {isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}
               </Button>
 
               <Button 
@@ -142,10 +166,14 @@ const Auth = () => {
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => setIsLogin(!isLogin)}
                 className="text-sm text-white/70 hover:text-white transition-colors"
               >
-                Not a member? <span className="font-bold">Create an account</span>
+                {isLogin ? (
+                  <>Not a member? <span className="font-bold">Create an account</span></>
+                ) : (
+                  <>Already a member? <span className="font-bold">Login</span></>
+                )}
               </button>
             </div>
             </div>

@@ -3,24 +3,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import homepageBg from "@/assets/homepage-bg.svg";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigate to registration step 1
-    navigate('/register/step1');
+    setIsLoading(true);
+
+    try {
+      await register(email, password);
+      toast({
+        title: "Registration successful",
+        description: "Account created! Let's complete your profile.",
+      });
+      navigate('/register/step1');
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignIn = () => {
     toast({
-      title: "Authentication not configured",
-      description: "Backend authentication is not set up yet. This is UI only.",
+      title: "Google authentication not configured",
+      description: "Please use email and password for now.",
     });
   };
 
@@ -112,10 +131,11 @@ const Register = () => {
 
               <Button 
                 type="submit"
+                disabled={isLoading}
                 className="w-full h-11 rounded-xl font-medium"
                 style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
               >
-                Register
+                {isLoading ? 'Creating Account...' : 'Register'}
               </Button>
 
               <Button 

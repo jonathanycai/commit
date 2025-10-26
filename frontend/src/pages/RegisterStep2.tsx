@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { X, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiService } from "@/lib/api";
 import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotLaptop from "@/assets/mascot-laptop.svg";
@@ -24,8 +26,16 @@ const RegisterStep2 = () => {
     { name: "", link: "" },
     { name: "", link: "" },
   ]);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    navigate('/auth');
+    return null;
+  }
 
   const handleAddProject = () => {
     setProjects([...projects, { name: "", link: "" }]);
@@ -41,7 +51,7 @@ const RegisterStep2 = () => {
     navigate('/register/step1');
   };
 
-  const handleNext = (e: React.FormEvent) => {
+  const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
@@ -61,9 +71,36 @@ const RegisterStep2 = () => {
         }
       }
       
+      setIsLoading(true);
+      
+      // Create projects in the database
+      const validProjects = projects.filter(p => p.name && p.link);
+      for (const project of validProjects) {
+        try {
+          await apiService.createProject({
+            title: project.name,
+            project_name: project.link,
+            description: `Project created during registration: ${project.name}`,
+            tags: [],
+            looking_for: [],
+            is_active: true
+          });
+        } catch (error) {
+          console.error('Failed to create project:', project.name, error);
+          // Continue with other projects even if one fails
+        }
+      }
+      
+      if (validProjects.length > 0) {
+        toast({
+          title: "Projects created successfully",
+          description: `${validProjects.length} project(s) have been added to your profile.`,
+        });
+      }
+      
       // Store data and navigate to next step
       sessionStorage.setItem('registerStep2', JSON.stringify({
-        projects: projects.filter(p => p.name && p.link)
+        projects: validProjects
       }));
       
       navigate('/register/step3');
@@ -74,7 +111,15 @@ const RegisterStep2 = () => {
           description: error.errors[0].message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Error creating projects",
+          description: "Some projects may not have been created. You can add them later.",
+          variant: "destructive",
+        });
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -192,10 +237,11 @@ const RegisterStep2 = () => {
       <div className="fixed bottom-4 z-20" style={{ right: '100px' }}>
         <Button
           onClick={handleNext}
+          disabled={isLoading}
           className="px-8 h-12 rounded-xl font-medium"
           style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
         >
-          Next
+          {isLoading ? 'Creating Projects...' : 'Next'}
         </Button>
       </div>
     </div>

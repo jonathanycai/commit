@@ -33,6 +33,7 @@ export interface UserProfile {
   time_commitment: string;
   socials?: Record<string, string>;
   tech_tags?: string[];
+  project_links?: string[];
 }
 
 export interface UserProfileResponse {
@@ -69,7 +70,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -170,7 +171,7 @@ const getAuthToken = () => {
 // Helper function for API requests
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = getAuthToken();
-  
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {

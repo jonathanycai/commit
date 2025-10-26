@@ -87,8 +87,16 @@ router.get("/profile", requireAuth, async (req, res) => {
 // Update current user profile
 router.put("/profile", requireAuth, async (req, res) => {
     try {
-        const { username, role, experience, time_commitment, socials, tech_tags } = req.body;
-        
+        const {
+            username,
+            role,
+            experience,
+            time_commitment,
+            socials,
+            tech_tags,
+            project_links // ✅ NEW FIELD
+        } = req.body;
+
         const updateData = {};
         if (username !== undefined) updateData.username = username;
         if (role !== undefined) updateData.role = role;
@@ -96,11 +104,17 @@ router.put("/profile", requireAuth, async (req, res) => {
         if (time_commitment !== undefined) updateData.time_commitment = time_commitment;
         if (socials !== undefined) updateData.socials = socials;
         if (tech_tags !== undefined) updateData.tech_tags = tech_tags;
-        
+        if (project_links !== undefined) updateData.project_links = project_links; // ✅ Add support
+
+        // Ensure defaults so Supabase doesn't choke on missing values
+        if (!updateData.socials) updateData.socials = {};
+        if (!updateData.tech_tags) updateData.tech_tags = [];
+        if (!updateData.project_links) updateData.project_links = [];
+
         const { data, error } = await supabase
-            .from('users')
+            .from("users")
             .update(updateData)
-            .eq('id', req.user.id)
+            .eq("id", req.user.id)
             .select()
             .single();
 
@@ -108,33 +122,16 @@ router.put("/profile", requireAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'Profile updated successfully', 
-            profile: data 
+        res.json({
+            message: "Profile updated successfully",
+            profile: data,
         });
     } catch (error) {
-        res.status(500).json({ error: 'Profile update failed' });
+        console.error("Error updating profile:", error.message);
+        res.status(500).json({ error: "Profile update failed" });
     }
 });
 
-// Get user profile by ID
-router.get("/:id", async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", req.params.id)
-            .single();
-
-        if (error) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        res.json({ profile: data });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch profile" });
-    }
-});
 
 // Update user profile
 router.put("/:id", requireAuth, async (req, res) => {

@@ -11,41 +11,66 @@ import {
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiService } from "@/lib/api";
 import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotBuilder from "@/assets/mascot-builder.svg";
 import ProgressSidebar from "@/components/registration/ProgressSidebar";
 
 const profileSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
-  experienceLevel: z.string().min(1, "Experience level is required"),
+  username: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  experience: z.string().min(1, "Experience level is required"),
   role: z.string().min(1, "Role is required"),
-  timeCommitment: z.string().min(1, "Time commitment is required"),
+  time_commitment: z.string().min(1, "Time commitment is required"),
 });
 
 const RegisterStep1 = () => {
-  const [name, setName] = useState("");
-  const [experienceLevel, setExperienceLevel] = useState("");
+  const [username, setUsername] = useState("");
+  const [experience, setExperience] = useState("");
   const [role, setRole] = useState("");
   const [timeCommitment, setTimeCommitment] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
-  const handleNext = (e: React.FormEvent) => {
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    navigate('/auth');
+    return null;
+  }
+
+  const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       profileSchema.parse({
-        name,
-        experienceLevel,
+        username,
+        experience,
         role,
-        timeCommitment,
+        time_commitment: timeCommitment,
+      });
+      
+      setIsLoading(true);
+      
+      // Create user profile
+      await apiService.createUserProfile({
+        username,
+        experience,
+        role,
+        time_commitment: timeCommitment,
+      });
+      
+      toast({
+        title: "Profile created successfully",
+        description: "Let's continue with your preferences.",
       });
       
       // Store data and navigate to next step
       sessionStorage.setItem('registerStep1', JSON.stringify({
-        name,
-        experienceLevel,
+        username,
+        experience,
         role,
         timeCommitment,
       }));
@@ -58,7 +83,15 @@ const RegisterStep1 = () => {
           description: error.errors[0].message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Profile creation failed",
+          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,13 +153,13 @@ const RegisterStep1 = () => {
             <form onSubmit={handleNext} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Name *
+                  Username *
                 </label>
                 <Input
                   type="text"
-                  placeholder="Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
                   required
                 />
@@ -136,7 +169,7 @@ const RegisterStep1 = () => {
                 <label className="block text-sm font-medium text-white mb-2">
                   Experience Level *
                 </label>
-                <Select value={experienceLevel} onValueChange={setExperienceLevel} required>
+                <Select value={experience} onValueChange={setExperience} required>
                   <SelectTrigger className="h-11 rounded-lg border-white/20 bg-white/5 text-white">
                     <SelectValue placeholder="Select experience level" />
                   </SelectTrigger>
@@ -195,10 +228,11 @@ const RegisterStep1 = () => {
       <div className="fixed bottom-4 z-20" style={{ right: '100px' }}>
         <Button 
           onClick={handleNext}
+          disabled={isLoading}
           className="px-8 h-12 rounded-xl font-medium"
           style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
         >
-          Next
+          {isLoading ? 'Creating Profile...' : 'Next'}
         </Button>
       </div>
     </div>
