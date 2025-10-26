@@ -242,3 +242,27 @@ export const applyToProject = async (projectId: string) => {
     }),
   });
 };
+
+// Get received requests (requests to user's projects)
+export const getReceivedRequests = async () => {
+  return apiRequest('/applications/received');
+};
+
+// Get user's projects
+export const getMyProjects = async () => {
+  return apiRequest('/projects/my/projects');
+};
+
+// Approve an application
+export const approveApplication = async (applicationId: string) => {
+  return apiRequest(`/applications/${applicationId}/approve`, {
+    method: 'POST',
+  });
+};
+
+// Reject an application
+export const rejectApplication = async (applicationId: string) => {
+  return apiRequest(`/applications/${applicationId}/reject`, {
+    method: 'DELETE',
+  });
+};
