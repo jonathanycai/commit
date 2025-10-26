@@ -150,7 +150,7 @@ const Projects = () => {
                   size="lg"
                   className="rounded-xl"
                   style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
-                  onClick={() => navigate("/create")}
+                  onClick={() => setIsDialogOpen(true)}
                 >
                   + Post your project
                 </Button>
