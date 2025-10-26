@@ -13,87 +13,95 @@ const supabase = createClient(
 // Send request to join a project
 router.post("/", requireAuth, applicationLimiter, async (req, res) => {
     try {
-        const { project_id, blurb } = req.body;
-        
+        const { project_id } = req.body; // no longer taking blurb
+        const user_id = req.user.id;
+
         if (!project_id) {
-            return res.status(400).json({ error: 'Project ID is required' });
+            return res.status(400).json({ error: "Project ID is required" });
         }
 
         // Check if project exists
         const { data: project, error: projectError } = await supabase
-            .from('projects')
-            .select('id, owner_id, title')
-            .eq('id', project_id)
+            .from("projects")
+            .select("id, owner_id, title")
+            .eq("id", project_id)
             .single();
 
         if (projectError || !project) {
-            return res.status(404).json({ error: 'Project not found' });
+            return res.status(404).json({ error: "Project not found" });
         }
 
-        // Check if user is trying to apply to their own project
-        if (project.owner_id === req.user.id) {
-            return res.status(400).json({ error: 'Cannot apply to your own project' });
+        // Prevent applying to your own project
+        if (project.owner_id === user_id) {
+            return res
+                .status(400)
+                .json({ error: "Cannot apply to your own project" });
         }
 
-        // Check if application already exists
+        // Check if an application already exists
         const { data: existingApp } = await supabase
-            .from('applications')
-            .select('id')
-            .eq('project_id', project_id)
-            .eq('user_id', req.user.id)
+            .from("applications")
+            .select("id")
+            .eq("project_id", project_id)
+            .eq("user_id", user_id)
             .single();
 
         if (existingApp) {
-            return res.status(400).json({ error: 'Application already exists for this project' });
+            return res
+                .status(400)
+                .json({ error: "Application already exists for this project" });
         }
 
-        // Create application
+        // Create new application (hardcoded blurb = "")
         const { data, error } = await supabase
-            .from('applications')
+            .from("applications")
             .insert({
                 project_id,
-                user_id: req.user.id,
-                blurb: blurb || '',
-                status: 'pending'
-            })
-            .select(`
-                id,
-                project_id,
                 user_id,
-                blurb,
-                status,
-                created_at,
-                projects (
-                    id,
-                    title,
-                    description,
-                    owner_id,
-                    users!projects_owner_id_fkey (
-                        id,
-                        username,
-                        email
-                    )
-                ),
-                users!applications_user_id_fkey (
-                    id,
-                    username,
-                    email,
-                    role,
-                    experience
-                )
-            `)
+                blurb: "", // hardcoded empty string
+                status: "pending",
+            })
+            .select(
+                `
+          id,
+          project_id,
+          user_id,
+          blurb,
+          status,
+          created_at,
+          projects (
+            id,
+            title,
+            description,
+            owner_id,
+            users!projects_owner_id_fkey (
+              id,
+              username,
+              email
+            )
+          ),
+          users!applications_user_id_fkey (
+            id,
+            username,
+            email,
+            role,
+            experience
+          )
+        `
+            )
             .single();
 
         if (error) {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'Application sent successfully', 
-            application: data 
+        res.json({
+            message: "Application sent successfully",
+            application: data,
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to send application' });
+        console.error("Error creating application:", error.message);
+        res.status(500).json({ error: "Failed to send application" });
     }
 });
 
@@ -130,7 +138,7 @@ router.get("/successful", requireAuth, async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             successful_requests: data,
             count: data.length
         });
@@ -175,7 +183,7 @@ router.get("/received", requireAuth, async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             received_requests: data,
             count: data.length
         });
@@ -268,9 +276,9 @@ router.post("/:id/approve", requireAuth, async (req, res) => {
                 message: `Your application to join "${application.projects.title}" has been approved!`
             });
 
-        res.json({ 
-            message: 'Application approved successfully', 
-            application: data 
+        res.json({
+            message: 'Application approved successfully',
+            application: data
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to approve application' });
@@ -334,7 +342,7 @@ router.delete("/:id/reject", requireAuth, async (req, res) => {
                 message: `Your application to join "${application.projects.title}" was not accepted.`
             });
 
-        res.json({ 
+        res.json({
             message: 'Application rejected and removed successfully'
         });
     } catch (error) {
@@ -389,7 +397,7 @@ router.get("/project/:projectId", requireAuth, async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ 
+        res.json({
             project_applications: data,
             count: data.length
         });
