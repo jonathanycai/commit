@@ -20,7 +20,7 @@ create table if not exists users (
 create table if not exists projects (
   id uuid primary key default gen_random_uuid(),          -- unique identifier for each project
   owner_id uuid references users(id) on delete cascade,   -- user who created the project
-  title text not null,                                    -- project name
+  title text not null,                                    -- project name                                      -- project link/URL
   description text,                                       -- short or detailed description of the project
   tags text[] default '{}',                               -- project tech stack or general keywords
   looking_for text[] default '{}',                        -- roles they're recruiting for (e.g., ["frontend","ml"])
