@@ -58,6 +58,29 @@ export interface ProjectResponse {
   project: Project;
 }
 
+export interface Match {
+  id: string;
+  type: 'successful' | 'approved';
+  project: {
+    id: string;
+    title: string;
+    description: string;
+    tags?: string[];
+    looking_for?: string[];
+  };
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    role?: string;
+    experience?: string;
+    time_commitment?: string;
+    socials?: Record<string, string>;
+    tech_tags?: string[];
+  };
+  created_at: string;
+}
+
 class ApiService {
   private baseURL: string;
 
@@ -206,8 +229,8 @@ export const recordProjectSwipe = async (userId: string, projectId: string, dire
   });
 };
 
-// Get matches for a user
-export const getMatches = async (userId: string) => {
+// Get matches for a user (swipe matches)
+export const getSwipeMatches = async (userId: string) => {
   return apiRequest(`/swipes/matches?userId=${userId}`);
 };
 
@@ -243,6 +266,24 @@ export const applyToProject = async (projectId: string) => {
   });
 };
 
+// Get matches (both successful and approved applications)
+export const getMatches = async (): Promise<{
+  matches: Match[];
+  count: number;
+  successful_count: number;
+  approved_count: number;
+}> => {
+  return apiRequest('/applications/matches');
+};
+
+// Get successful applications (where user was accepted to projects)
+export const getSuccessfulApplications = async () => {
+  return apiRequest('/applications/successful');
+};
+
+// Get received requests (applications to user's projects)
+export const getReceivedRequests = async () => {
+  return apiRequest('/applications/received');
 // Get received requests (requests to user's projects)
 export const getReceivedRequests = async () => {
   return apiRequest('/applications/received');
