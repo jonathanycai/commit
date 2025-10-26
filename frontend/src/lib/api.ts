@@ -243,6 +243,30 @@ export const applyToProject = async (projectId: string) => {
   });
 };
 
+// Apply to a project (fixed version using access_token)
+export const applyToProjectBoard = async (projectId: string) => {
+  // ✅ Get token from localStorage (where your login actually stores it)
+  const token =
+    localStorage.getItem("access_token") || localStorage.getItem("auth_token");
+
+  if (!token) {
+    throw new Error("No access token found. Please log in first.");
+  }
+
+  // ✅ Make request with proper Authorization header
+  const response = await fetch(`${API_BASE_URL}/applications`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`, // attach token manually
+    },
+    body: JSON.stringify({
+      project_id: projectId,
+    }),
+  });
+};
+
+
 // Get all active projects
 export const getAllProjects = async () => {
   return apiRequest('/projects', {

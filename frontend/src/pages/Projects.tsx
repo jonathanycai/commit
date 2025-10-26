@@ -8,11 +8,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { toast } from "sonner";
-import { getAllProjects, getFilteredProjects } from "@/lib/api";
+import {
+  getAllProjects,
+  getFilteredProjects,
+  applyToProjectBoard,
+} from "@/lib/api";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState<string | null>(null); // track which project is applying
 
   // Filters + search
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +40,7 @@ const Projects = () => {
     if (type === "time") setSelectedTime((prev) => toggle(prev, value));
   };
 
-  // Fetch projects whenever search or filters change
+  // Fetch projects
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -66,6 +71,23 @@ const Projects = () => {
 
     fetchProjects();
   }, [searchQuery, selectedRoles, selectedExperience, selectedTime]);
+
+  const handleApply = async (projectId: string) => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      toast.error("Please log in to apply for a project!");
+      return;
+    }
+
+    try {
+      await applyToProjectBoard(projectId);
+      toast.success("You’ve successfully applied to this project!");
+    } catch (err: any) {
+      console.error("Failed to apply:", err);
+      toast.error(err.message || "Failed to apply");
+    }
+  };
+
 
   // Submit dummy handler for dialog
   const handleSubmit = () => {
@@ -148,20 +170,25 @@ const Projects = () => {
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Role</Label>
                 <div className="space-y-3">
-                  {["Front-End", "Back-End", "Full Stack", "Designer", "Idea Guy", "Pitch Wizard"].map(
-                    (role) => (
-                      <div key={role} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={role}
-                          checked={selectedRoles.includes(role)}
-                          onCheckedChange={() => handleFilterChange("role", role)}
-                        />
-                        <label htmlFor={role} className="text-sm font-medium cursor-pointer">
-                          {role}
-                        </label>
-                      </div>
-                    )
-                  )}
+                  {[
+                    "Front-End",
+                    "Back-End",
+                    "Full Stack",
+                    "Designer",
+                    "Idea Guy",
+                    "Pitch Wizard",
+                  ].map((role) => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={role}
+                        checked={selectedRoles.includes(role)}
+                        onCheckedChange={() => handleFilterChange("role", role)}
+                      />
+                      <label htmlFor={role} className="text-sm font-medium cursor-pointer">
+                        {role}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -222,10 +249,16 @@ const Projects = () => {
                           <h3 className="text-2xl font-bold">{project.title}</h3>
                           <Button
                             size="sm"
+                            disabled={applying === project.id}
+                            onClick={() => handleApply(project.id)}
                             className="rounded-xl"
-                            style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
+                            style={{
+                              backgroundColor: "#A6F4C5",
+                              color: "#111118",
+                              opacity: applying === project.id ? 0.7 : 1,
+                            }}
                           >
-                            ✓ Down to commit!
+                            {applying === project.id ? "Applying..." : "✓ Down to commit!"}
                           </Button>
                         </div>
 
