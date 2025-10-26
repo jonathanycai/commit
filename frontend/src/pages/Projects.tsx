@@ -61,8 +61,10 @@ const Projects = () => {
   const [dialogRoles, setDialogRoles] = useState<string[]>([]);
   const [dialogTimeCommitment, setDialogTimeCommitment] = useState<string>("");
 
-  // Fetch projects
+  // Fetch projects with debounced search
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const fetchProjects = async () => {
       setLoading(true);
       try {
@@ -72,12 +74,20 @@ const Projects = () => {
           filterExperience.length > 0 ||
           filterTime.length > 0;
 
+        console.log('Fetching with filters:', {
+          search: searchQuery,
+          hasFilters,
+          filterRoles,
+          filterExperience,
+          filterTime
+        });
+
         const data = hasFilters
           ? await getFilteredProjects({
-            search: searchQuery,
-            role: filterRoles,
-            experience: filterExperience,
-            time_commitment: filterTime,
+            search: searchQuery.trim() || undefined, // Pass undefined for empty strings
+            role: filterRoles.length > 0 ? filterRoles : undefined,
+            experience: filterExperience.length > 0 ? filterExperience : undefined,
+            time_commitment: filterTime.length > 0 ? filterTime : undefined,
           })
           : await getAllProjects();
 
@@ -90,7 +100,22 @@ const Projects = () => {
       }
     };
 
-    fetchProjects();
+    // Debounce the search query to avoid too many API calls
+    // Filter changes (not search) happen immediately
+    if (searchQuery.trim()) {
+      timeoutId = setTimeout(() => {
+        fetchProjects();
+      }, 500); // 500ms debounce for search
+    } else {
+      // No search query, fetch immediately (for filters)
+      fetchProjects();
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [searchQuery, filterRoles, filterExperience, filterTime]);
 
   const handleApply = async (projectId: string) => {
@@ -165,6 +190,25 @@ const Projects = () => {
     setDialogTimeCommitment(prev => prev === time ? "" : time);
   };
 
+  // Filter toggle handlers for sidebar
+  const toggleExperienceFilter = (level: string) => {
+    setFilterExperience(prev =>
+      prev.includes(level) ? prev.filter(l => l !== level) : [...prev, level]
+    );
+  };
+
+  const toggleRoleFilter = (role: string) => {
+    setFilterRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const toggleTimeFilter = (time: string) => {
+    setFilterTime(prev =>
+      prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time]
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background font-lexend">
       {/* background */}
@@ -200,7 +244,7 @@ const Projects = () => {
                 </h2>
               </div>
 
-              {/* Search */}
+              {/* Search - First */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Search by Project Name</Label>
                 <Input
@@ -217,10 +261,14 @@ const Projects = () => {
                 <div className="space-y-3">
                   {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
                     <div key={level} className="flex items-center space-x-2">
-                      <Checkbox id={level} />
+                      <Checkbox 
+                        id={level}
+                        checked={filterExperience.includes(level)}
+                        onCheckedChange={() => toggleExperienceFilter(level)}
+                      />
                       <label
                         htmlFor={level}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="text-sm font-medium leading-none cursor-pointer"
                       >
                         {level}
                       </label>
@@ -235,10 +283,14 @@ const Projects = () => {
                 <div className="space-y-3">
                   {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
                     <div key={role} className="flex items-center space-x-2">
-                      <Checkbox id={role} />
+                      <Checkbox 
+                        id={role}
+                        checked={filterRoles.includes(role)}
+                        onCheckedChange={() => toggleRoleFilter(role)}
+                      />
                       <label
                         htmlFor={role}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="text-sm font-medium leading-none cursor-pointer"
                       >
                         {role}
                       </label>
@@ -251,12 +303,16 @@ const Projects = () => {
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Time Commitment</Label>
                 <div className="space-y-3">
-                  {['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week'].map((time) => (
+                  {timeCommitmentOptions.map((time) => (
                     <div key={time} className="flex items-center space-x-2">
-                      <Checkbox id={time} />
+                      <Checkbox 
+                        id={time}
+                        checked={filterTime.includes(time)}
+                        onCheckedChange={() => toggleTimeFilter(time)}
+                      />
                       <label
                         htmlFor={time}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="text-sm font-medium leading-none cursor-pointer"
                       >
                         {time}
                       </label>

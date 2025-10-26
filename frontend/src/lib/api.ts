@@ -195,18 +195,37 @@ const getAuthToken = () => {
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = getAuthToken();
 
+  // Check if token exists and throw error early if not
+  if (!token) {
+    console.error('No token found in localStorage');
+    throw new Error('No token provided. Please log in.');
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || 'API request failed');
+    let errorMessage = 'Unknown error';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || errorMessage;
+    } catch (e) {
+      // If response is not JSON, try to get text
+      try {
+        const errorText = await response.text();
+        errorMessage = errorText || errorMessage;
+      } catch (textError) {
+        errorMessage = `HTTP ${response.status} ${response.statusText}`;
+      }
+    }
+    console.error(`API error for ${endpoint}:`, errorMessage);
+    throw new Error(errorMessage);
   }
 
   return response.json();

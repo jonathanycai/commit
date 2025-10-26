@@ -5,8 +5,28 @@ import homepageBg from "@/assets/homepage-bg.svg";
 import mascot from "@/assets/mascot.svg";
 import mascot1 from "@/assets/mascot-1.svg";
 import mascot2 from "@/assets/mascot-2.svg";
+import { useState, useEffect } from "react";
+import { getAllProjects } from "@/lib/api";
 
 const Home = () => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await getAllProjects();
+        // Get first 4 projects
+        setProjects((response.projects || []).slice(0, 4));
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
   return (
     <div className="min-h-screen bg-background font-lexend overflow-hidden">
       <div 
@@ -159,47 +179,53 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i}
-                  className="rounded-3xl p-[2px] transition-all hover:scale-105"
-                  style={{ 
-                    background: 'linear-gradient(135deg, rgba(157, 156, 255, 0.6), rgba(166, 244, 197, 0.6))'
-                  }}
-                >
-                  <div 
-                    className="rounded-3xl p-6 h-full"
-                    style={{ backgroundColor: '#1E2139' }}
-                  >
-                    <h3 className="text-xl font-bold mb-4">Title of Project</h3>
-                  
-                  <div className="flex flex-nowrap gap-1.5 mb-4 overflow-x-auto">
-                    <span 
-                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
-                      style={{ backgroundColor: '#6789EC', color: '#111118', fontSize: '10px', fontWeight: '500' }}
-                    >
-                      Designer
-                    </span>
-                    <span 
-                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
-                      style={{ backgroundColor: '#A6F4C5', color: '#111118', fontSize: '10px', fontWeight: '500' }}
-                    >
-                      Idea Guy
-                    </span>
-                    <span 
-                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
-                      style={{ backgroundColor: '#6789EC', color: '#111118', fontSize: '10px', fontWeight: '500' }}
-                    >
-                      Front-End
-                    </span>
-                  </div>
-
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      This is a description of the project that the person will write and share a little bit about what they want for the people that they're looking for.
-                    </p>
-                  </div>
+              {loading ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  Loading projects...
                 </div>
-              ))}
+              ) : projects.length > 0 ? (
+                projects.map((project) => (
+                  <div 
+                    key={project.id}
+                    className="rounded-3xl p-[2px] transition-all hover:scale-105"
+                    style={{ 
+                      background: 'linear-gradient(135deg, rgba(157, 156, 255, 0.6), rgba(166, 244, 197, 0.6))'
+                    }}
+                  >
+                    <div 
+                      className="rounded-3xl p-6 h-full"
+                      style={{ backgroundColor: '#1E2139' }}
+                    >
+                      <h3 className="text-xl font-bold mb-4">{project.title || 'Untitled Project'}</h3>
+                    
+                      <div className="flex flex-nowrap gap-1.5 mb-4 overflow-x-auto">
+                        {(project.looking_for || []).slice(0, 3).map((role, idx) => (
+                          <span 
+                            key={idx}
+                            className="px-2 py-0.5 rounded-full whitespace-nowrap"
+                            style={{ 
+                              backgroundColor: role === 'Idea Guy' ? '#A6F4C5' : '#6789EC', 
+                              color: '#111118', 
+                              fontSize: '10px', 
+                              fontWeight: '500' 
+                            }}
+                          >
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                        {project.description || 'No description available.'}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  No projects available yet
+                </div>
+              )}
             </div>
           </div>
         </section>

@@ -87,9 +87,9 @@ const Match = () => {
 
       setCurrentProject(transformedProject);
       setIsLoading(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching project:", error);
-      const errorMessage = error?.message || "Failed to load project";
+      const errorMessage = error instanceof Error ? error.message : "Failed to load project";
       toast.error(errorMessage);
       setIsLoading(false);
       setCurrentProject(null);
@@ -110,9 +110,9 @@ const Match = () => {
       
       // Move to next card after API call completes
       await fetchNextProject();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = error?.message || "Failed to record swipe";
+      const errorMessage = error instanceof Error ? error.message : "Failed to record swipe";
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -134,12 +134,13 @@ const Match = () => {
       try {
         const appResult = await applyToProject(projectId);
         console.log("Application created successfully:", appResult);
-      } catch (appError: any) {
+      } catch (appError) {
         // Don't fail the swipe if application fails (e.g., already applied)
         console.error("Application error:", appError);
         // Only show toast if it's NOT an "already exists" error
-        if (!appError.message?.includes("already exists")) {
-          toast.error(`Application failed: ${appError.message || 'Unknown error'}`);
+        const errorMessage = appError instanceof Error ? appError.message : 'Unknown error';
+        if (!errorMessage.includes("already exists")) {
+          toast.error(`Application failed: ${errorMessage}`);
         }
       }
       
@@ -147,9 +148,9 @@ const Match = () => {
       
       // Move to next card after API call completes
       await fetchNextProject();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = error?.message || "Failed to record swipe";
+      const errorMessage = error instanceof Error ? error.message : "Failed to record swipe";
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
