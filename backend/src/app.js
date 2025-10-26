@@ -6,6 +6,7 @@ import userRoutes from "./routes/users.js";
 import healthRoutes from "./routes/health.js";
 import applicationRoutes from "./routes/applications.js";
 import projectRoutes from "./routes/projects.js";
+import notificationRoutes from "./routes/notifications.js";
 import swipesRoutes from "./swipes/routes.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
 
@@ -38,10 +39,13 @@ app.use("/projects", projectRoutes);
 // Applications/Requests routes
 app.use("/applications", applicationRoutes);
 
+// Notifications routes
+app.use("/notifications", notificationRoutes);
+
 // Swipes functionality
 app.use("/swipes", swipesRoutes);
 
-
+// Start the server
 app.listen(process.env.PORT || 4000, () =>
     console.log(`running on http://localhost:${process.env.PORT || 4000}`)
 );
