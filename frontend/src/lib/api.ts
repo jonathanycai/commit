@@ -250,3 +250,19 @@ export const getAllProjects = async () => {
   });
 };
 
+export const getFilteredProjects = async (filters: {
+  search?: string;
+  role?: string[];
+  experience?: string[];
+  time_commitment?: string[];
+}) => {
+  const params = new URLSearchParams();
+
+  if (filters.search?.trim()) params.append("search", filters.search.trim());
+  if (filters.role?.length) params.append("looking_for", filters.role.join(","));
+  if (filters.experience?.length) params.append("experience", filters.experience.join(","));
+  if (filters.time_commitment?.length)
+    params.append("time_commitment", filters.time_commitment.join(","));
+
+  return apiRequest(`/projects?${params.toString()}`, { method: "GET" });
+};
