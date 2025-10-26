@@ -161,3 +161,83 @@ class ApiService {
 }
 
 export const apiService = new ApiService(API_BASE_URL);
+
+// Helper function to get auth token from localStorage
+const getAuthToken = () => {
+  return localStorage.getItem('auth_token');
+};
+
+// Helper function for API requests
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || 'API request failed');
+  }
+
+  return response.json();
+};
+
+// Get next project for user swiping
+export const getNextProject = async (userId: string) => {
+  return apiRequest(`/swipes/next-project?userId=${userId}`);
+};
+
+// Record user's swipe on a project
+export const recordProjectSwipe = async (userId: string, projectId: string, direction: 'like' | 'pass') => {
+  return apiRequest('/swipes/project', {
+    method: 'POST',
+    body: JSON.stringify({
+      userId,
+      project_id: projectId,
+      direction,
+    }),
+  });
+};
+
+// Get matches for a user
+export const getMatches = async (userId: string) => {
+  return apiRequest(`/swipes/matches?userId=${userId}`);
+};
+
+// Health check for swipes
+export const checkSwipesHealth = async () => {
+  return apiRequest('/swipes/health');
+};
+
+// Get next user for project owner swiping
+export const getNextUser = async (projectId: string) => {
+  return apiRequest(`/swipes/next-user?projectId=${projectId}`);
+};
+
+// Record project owner's swipe on a user
+export const recordUserSwipe = async (userId: string, projectId: string, direction: 'like' | 'pass') => {
+  return apiRequest('/swipes/user', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      project_id: projectId,
+      direction,
+    }),
+  });
+};
+
+// Apply to a project
+export const applyToProject = async (projectId: string) => {
+  return apiRequest('/applications', {
+    method: 'POST',
+    body: JSON.stringify({
+      project_id: projectId,
+    }),
+  });
+};

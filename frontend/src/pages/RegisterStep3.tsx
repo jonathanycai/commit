@@ -54,24 +54,24 @@ const RegisterStep3 = () => {
       };
 
       socialsSchema.parse(socialsData);
-      
+
       setIsLoading(true);
-      
+
       // Update user profile with socials data
       await apiService.updateUserProfile({
         socials: socialsData
       });
-      
+
       toast({
         title: "Registration complete!",
         description: "Your profile has been created successfully.",
       });
-      
+
       // Clear session storage
       sessionStorage.removeItem('registerStep1');
       sessionStorage.removeItem('registerStep2');
       sessionStorage.removeItem('registerStep3');
-      
+
       // Navigate to home page
       setTimeout(() => {
         navigate('/');
@@ -97,112 +97,112 @@ const RegisterStep3 = () => {
 
   return (
     <div className="min-h-screen">
-      <div 
+      <div
         className="fixed inset-0 z-0"
-        style={{ 
+        style={{
           backgroundImage: `url(${homepageBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       />
-      
+
       <ProgressSidebar currentStep={3} />
-      
+
       <div className="relative z-10 min-h-screen flex items-center px-4 pl-24" style={{ paddingRight: '100px' }}>
         <div className="w-full flex items-center justify-between gap-16">
           {/* Left side - Mascot */}
           <div className="flex-1 flex justify-center">
-            <img 
-              src={mascotCharging} 
-              alt="Builder mascot charging" 
+            <img
+              src={mascotCharging}
+              alt="Builder mascot charging"
               className="w-96 h-auto"
             />
           </div>
 
           {/* Right side - Form Card */}
-          <div 
+          <div
             className="rounded-2xl p-[2px]"
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)',
               width: '500px'
             }}
           >
-            <div 
+            <div
               className="rounded-2xl p-10 relative"
-              style={{ 
+              style={{
                 backgroundColor: 'rgba(20, 22, 35, 0.95)',
                 backdropFilter: 'blur(10px)'
               }}
             >
-            <button
-              onClick={() => navigate('/auth')}
-              className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
+              <button
+                onClick={() => navigate('/auth')}
+                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
 
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-1">
-                link your socials.
-              </h2>
-              <p className="text-sm text-white/70">
-                link where you live online.
-              </p>
-            </div>
-
-            <form className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  LinkedIn
-                </label>
-                <Input
-                  type="url"
-                  placeholder="link"
-                  value={linkedin}
-                  onChange={(e) => setLinkedin(e.target.value)}
-                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                />
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  link your socials.
+                </h2>
+                <p className="text-sm text-white/70">
+                  link where you live online.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Discord
-                </label>
-                <Input
-                  type="text"
-                  placeholder="link"
-                  value={discord}
-                  onChange={(e) => setDiscord(e.target.value)}
-                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                />
-              </div>
+              <form className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    LinkedIn
+                  </label>
+                  <Input
+                    type="url"
+                    placeholder="link"
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
+                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  GitHub
-                </label>
-                <Input
-                  type="url"
-                  placeholder="link"
-                  value={github}
-                  onChange={(e) => setGithub(e.target.value)}
-                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Discord
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="link"
+                    value={discord}
+                    onChange={(e) => setDiscord(e.target.value)}
+                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Devpost
-                </label>
-                <Input
-                  type="url"
-                  placeholder="link"
-                  value={devpost}
-                  onChange={(e) => setDevpost(e.target.value)}
-                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                />
-              </div>
-            </form>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    GitHub
+                  </label>
+                  <Input
+                    type="url"
+                    placeholder="link"
+                    value={github}
+                    onChange={(e) => setGithub(e.target.value)}
+                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Devpost
+                  </label>
+                  <Input
+                    type="url"
+                    placeholder="link"
+                    value={devpost}
+                    onChange={(e) => setDevpost(e.target.value)}
+                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                  />
+                </div>
+              </form>
             </div>
           </div>
         </div>
