@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import homepageBg from "@/assets/homepage-bg.svg";
 
 const Register = () => {
@@ -12,17 +11,22 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await register(email, password);
+      sessionStorage.setItem(
+        'pendingRegistration',
+        JSON.stringify({ email, password })
+      );
+      sessionStorage.removeItem('registerStep1');
+      sessionStorage.removeItem('registerStep2');
+      sessionStorage.removeItem('registerStep3');
       toast({
-        title: "Registration successful",
-        description: "Account created! Let's complete your profile.",
+        title: "Let's build your profile",
+        description: "Tell us more about yourself to finish creating your account.",
       });
       navigate('/register/step1');
     } catch (error) {

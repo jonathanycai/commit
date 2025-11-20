@@ -28,10 +28,17 @@ const Auth = () => {
         });
         navigate('/');
       } else {
-        await register(email, password);
+        sessionStorage.setItem(
+          'pendingRegistration',
+          JSON.stringify({ email, password })
+        );
+        sessionStorage.removeItem('registerStep1');
+        sessionStorage.removeItem('registerStep2');
+        sessionStorage.removeItem('registerStep3');
+
         toast({
-          title: "Registration successful",
-          description: "Account created! Let's complete your profile.",
+          title: "Let's build your profile",
+          description: "Tell us more about yourself to finish creating your account.",
         });
         navigate('/register/step1');
       }
