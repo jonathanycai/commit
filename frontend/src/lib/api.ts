@@ -156,6 +156,12 @@ class ApiService {
     });
   }
 
+  async checkUsername(username: string): Promise<{ available: boolean }> {
+    return this.request<{ available: boolean }>(`/users/check-username/${username}`, {
+      method: 'GET',
+    });
+  }
+
   async getUserProfile(userId?: string): Promise<{ profile: UserProfile }> {
     const endpoint = userId ? `/users/${userId}` : '/users/profile';
     return this.request<{ profile: UserProfile }>(endpoint, {
@@ -329,7 +335,7 @@ export const createProject = async (projectData: {
 export const getProjects = async () => {
   return apiRequest('/projects');
 };
-  
+
 // Get matches (both successful and approved applications)
 export const getMatches = async (): Promise<{
   matches: Match[];
@@ -368,3 +374,4 @@ export const rejectApplication = async (applicationId: string) => {
     method: 'DELETE',
   });
 };
+
