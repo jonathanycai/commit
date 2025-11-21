@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { apiService } from "@/lib/api";
 import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotBuilder from "@/assets/mascot-builder.svg";
@@ -33,13 +31,27 @@ const RegisterStep1 = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    navigate('/auth');
-    return null;
-  }
+  useEffect(() => {
+    const pendingRegistration = sessionStorage.getItem('pendingRegistration');
+    if (!pendingRegistration) {
+      navigate('/auth', { replace: true });
+      return;
+    }
+
+    const storedStep1 = sessionStorage.getItem('registerStep1');
+    if (storedStep1) {
+      try {
+        const parsed = JSON.parse(storedStep1);
+        setUsername(parsed.username || "");
+        setExperience(parsed.experience || "");
+        setRole(parsed.role || "");
+        setTimeCommitment(parsed.timeCommitment || "");
+      } catch (error) {
+        console.error('Failed to parse stored step 1 data', error);
+      }
+    }
+  }, [navigate]);
 
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,8 +87,8 @@ const RegisterStep1 = () => {
       });
 
       toast({
-        title: "Profile created successfully",
-        description: "Let's continue with your preferences.",
+        title: "Basics saved",
+        description: "Next, add your past projects.",
       });
 
       // Store data and navigate to next step
