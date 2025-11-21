@@ -70,10 +70,15 @@ router.get("/", async (req, res) => {
             role,
             experience,
             time_commitment,
-            search, // 🔍 new search param
+            search,
         } = req.query;
 
-        // Base query
+        const toArray = (val) => {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            return val.split(',').map(v => v.trim());
+        };
+
         let query = supabase
             .from("projects")
             .select(
@@ -99,30 +104,36 @@ router.get("/", async (req, res) => {
             .eq("is_active", is_active === "true")
             .order("created_at", { ascending: false });
 
-        // 🔍 Title or description search (case-insensitive)
         if (search && search.trim()) {
             query = query.or(
                 `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`
             );
         }
 
-        // Filter by tags
         if (tags) {
-            const tagArray = tags.split(",").map((t) => t.trim());
-            query = query.overlaps("tags", tagArray);
+            const tagArray = toArray(tags);
+            if (tagArray.length > 0) query = query.overlaps("tags", tagArray);
         }
 
-        // Filter by looking_for
         if (looking_for) {
-            const lookingArray = looking_for.split(",").map((r) => r.trim());
-            query = query.overlaps("looking_for", lookingArray);
+            const lookingArray = toArray(looking_for);
+            if (lookingArray.length > 0) query = query.overlaps("looking_for", lookingArray);
         }
 
-        // Filter by user profile fields (joined table)
-        if (role) query = query.eq("users.role", role.trim());
-        if (experience) query = query.eq("users.experience", experience.trim());
-        if (time_commitment)
-            query = query.eq("users.time_commitment", time_commitment.trim());
+        if (role) {
+            const roleArray = toArray(role);
+            if (roleArray.length > 0) query = query.in("users.role", roleArray);
+        }
+
+        if (experience) {
+            const expArray = toArray(experience);
+            if (expArray.length > 0) query = query.in("users.experience", expArray);
+        }
+
+        if (time_commitment) {
+            const timeArray = toArray(time_commitment);
+            if (timeArray.length > 0) query = query.in("users.time_commitment", timeArray);
+        }
 
         // Execute query
         const { data, error } = await query;
@@ -146,46 +157,6 @@ router.get("/", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to fetch projects" });
-    }
-});
-
-
-
-// Get a specific project by ID
-router.get("/:id", async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('projects')
-            .select(`
-                id,
-                owner_id,
-                title,
-                description,
-                tags,
-                looking_for,
-                is_active,
-                created_at,
-                users!projects_owner_id_fkey (
-                    id,
-                    username,
-                    email,
-                    role,
-                    experience,
-                    time_commitment,
-                    socials,
-                    tech_tags
-                )
-            `)
-            .eq('id', req.params.id)
-            .single();
-
-        if (error || !data) {
-            return res.status(404).json({ error: 'Project not found' });
-        }
-
-        res.json({ project: data });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch project' });
     }
 });
 
