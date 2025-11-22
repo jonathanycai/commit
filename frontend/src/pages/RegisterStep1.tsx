@@ -77,28 +77,21 @@ const RegisterStep1 = () => {
         setIsLoading(false);
         return;
       }
-
-      // Create user profile
-      await apiService.createUserProfile({
-        username,
-        experience,
-        role,
-        time_commitment: timeCommitment,
-      });
-
+        
+      sessionStorage.setItem(
+        'registerStep1',
+        JSON.stringify({
+          username,
+          experience,
+          role,
+          timeCommitment,
+        })
+      );
+      
       toast({
         title: "Basics saved",
         description: "Next, add your past projects.",
       });
-
-      // Store data and navigate to next step
-      sessionStorage.setItem('registerStep1', JSON.stringify({
-        username,
-        experience,
-        role,
-        timeCommitment,
-      }));
-
       navigate('/register/step2');
     } catch (error) {
       if (error instanceof z.ZodError) {
