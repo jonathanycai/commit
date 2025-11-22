@@ -1,9 +1,11 @@
-import { FormEvent, MouseEvent, useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiService } from "@/lib/api";
 import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotLaptop from "@/assets/mascot-laptop.svg";
@@ -27,26 +29,13 @@ const RegisterStep2 = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    const pendingRegistration = sessionStorage.getItem('pendingRegistration');
-    if (!pendingRegistration) {
-      navigate('/auth', { replace: true });
-      return;
-    }
-
-    const storedStep2 = sessionStorage.getItem('registerStep2');
-    if (storedStep2) {
-      try {
-        const parsed = JSON.parse(storedStep2);
-        if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
-          setProjects(parsed.projects);
-        }
-      } catch (error) {
-        console.error('Failed to parse stored step 2 data', error);
-      }
-    }
-  }, [navigate]);
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    navigate('/auth');
+    return null;
+  }
 
   const handleAddProject = () => {
     setProjects([...projects, { name: "", link: "" }]);
@@ -59,10 +48,6 @@ const RegisterStep2 = () => {
   };
 
   const handleBack = () => {
-    sessionStorage.setItem(
-      'registerStep2',
-      JSON.stringify({ projects })
-    );
     navigate('/register/step1');
   };
 
@@ -87,13 +72,29 @@ const RegisterStep2 = () => {
       }
 
       setIsLoading(true);
-      
+
+      // Create projects in the database
       const validProjects = projects.filter(p => p.name && p.link);
-      
+      for (const project of validProjects) {
+        try {
+          await apiService.createProject({
+            title: project.name,
+            project_name: project.link,
+            description: `Project created during registration: ${project.name}`,
+            tags: [],
+            looking_for: [],
+            is_active: true
+          });
+        } catch (error) {
+          console.error('Failed to create project:', project.name, error);
+          // Continue with other projects even if one fails
+        }
+      }
+
       if (validProjects.length > 0) {
         toast({
-          title: "Projects saved",
-          description: `${validProjects.length} project(s) will be created once you finish registration.`,
+          title: "Projects created successfully",
+          description: `${validProjects.length} project(s) have been added to your profile.`,
         });
       }
 

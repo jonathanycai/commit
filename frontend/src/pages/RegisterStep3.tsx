@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
@@ -45,35 +45,12 @@ const RegisterStep3 = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    const pendingRegistration = sessionStorage.getItem("pendingRegistration");
-    if (!pendingRegistration) {
-      navigate("/auth", { replace: true });
-      return;
-    }
-
-    const storedStep3 = sessionStorage.getItem("registerStep3");
-    if (storedStep3) {
-      try {
-        const parsed = JSON.parse(storedStep3);
-        setLinkedin(parsed.linkedin || "");
-        setDiscord(parsed.discord || "");
-        setGithub(parsed.github || "");
-        setDevpost(parsed.devpost || "");
-      } catch (error) {
-        console.error("Failed to parse stored step 3 data", error);
-      }
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    sessionStorage.setItem(
-      "registerStep3",
-      JSON.stringify({ linkedin, discord, github, devpost })
-    );
-  }, [linkedin, discord, github, devpost]);
+  if (!isAuthenticated) {
+    navigate("/auth");
+    return null;
+  }
 
   const handleBack = () => navigate("/register/step2");
 
@@ -81,106 +58,14 @@ const RegisterStep3 = () => {
     try {
       const socialsData = { linkedin, discord, github, devpost };
       socialsSchema.parse(socialsData);
-      const pendingRegistrationRaw = sessionStorage.getItem("pendingRegistration");
-      if (!pendingRegistrationRaw) {
-        toast({
-          title: "Registration incomplete",
-          description: "Please start the registration process again.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
 
-      const step1DataRaw = sessionStorage.getItem("registerStep1");
-      if (!step1DataRaw) {
-        toast({
-          title: "Missing information",
-          description: "Please complete Step 1 before finishing registration.",
-          variant: "destructive",
-        });
-        navigate("/register/step1");
-        return;
-      }
-
-      let pendingRegistration: { email?: string; password?: string };
-      let step1Data: {
-        username?: string;
-        experience?: string;
-        role?: string;
-        timeCommitment?: string;
-      };
-
-      try {
-        pendingRegistration = JSON.parse(pendingRegistrationRaw) ?? {};
-      } catch (error) {
-        console.error("Failed to parse pending registration", error);
-        throw new Error("Registration data is corrupted. Please restart registration.");
-      }
-
-      try {
-        step1Data = JSON.parse(step1DataRaw) ?? {};
-      } catch (error) {
-        console.error("Failed to parse step 1 data", error);
-        throw new Error("Step 1 data is corrupted. Please restart registration.");
-      }
-
-      const { email, password } = pendingRegistration;
-      if (!email || !password) {
-        throw new Error("Registration data is incomplete. Please restart registration.");
-      }
-
-      if (!step1Data.username || !step1Data.experience || !step1Data.role || !step1Data.timeCommitment) {
-        throw new Error("Step 1 data is incomplete. Please restart registration.");
-      }
-
-      const step2DataRaw = sessionStorage.getItem("registerStep2");
-      let project_links: string[] = [];
-      let projectsToCreate: Array<{ name: string; link: string }> = [];
-
-      if (step2DataRaw) {
-        try {
-          const parsedStep2 = JSON.parse(step2DataRaw);
-          if (Array.isArray(parsedStep2?.projects)) {
-            projectsToCreate = parsedStep2.projects.filter(
-              (project: any) => project.name && project.link
-            );
-            project_links = projectsToCreate.map((project) => project.link);
-          }
-        } catch (error) {
-          console.error("Failed to parse step 2 data", error);
-          throw new Error("Project data is corrupted. Please restart registration.");
-        }
-      }
+      // Get project links saved from Step 2
+      const step2Data = JSON.parse(sessionStorage.getItem("registerStep2") || "{}");
+      const project_links = step2Data.projects?.map((p: any) => p.link) || [];
 
       setIsLoading(true);
 
-      await register(email, password);
-
-      await apiService.createUserProfile({
-        username: step1Data.username,
-        experience: step1Data.experience,
-        role: step1Data.role,
-        time_commitment: step1Data.timeCommitment,
-      });
-
-      if (projectsToCreate.length > 0) {
-        for (const project of projectsToCreate) {
-          try {
-            await apiService.createProject({
-              title: project.name,
-              project_name: project.link,
-              description: `Project created during registration: ${project.name}`,
-              tags: [],
-              looking_for: [],
-              is_active: true,
-            });
-          } catch (error) {
-            console.error("Failed to create project:", project.name, error);
-          }
-        }
-      }
-
+      // Combine socials + project links in one update
       await apiService.updateUserProfile({
         socials: socialsData,
         project_links,
@@ -188,10 +73,10 @@ const RegisterStep3 = () => {
 
       toast({
         title: "Registration complete!",
-        description: "Your account and profile have been created successfully.",
+        description: "Your profile has been created successfully.",
       });
 
-      sessionStorage.removeItem("pendingRegistration");
+      // Clean up stored registration data
       sessionStorage.removeItem("registerStep1");
       sessionStorage.removeItem("registerStep2");
       sessionStorage.removeItem("registerStep3");
@@ -206,7 +91,7 @@ const RegisterStep3 = () => {
         });
       } else {
         toast({
-          title: "Registration failed",
+          title: "Profile update failed",
           description:
             error instanceof Error
               ? error.message
