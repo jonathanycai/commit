@@ -87,10 +87,9 @@ const RegisterStep2 = () => {
       }
 
       setIsLoading(true);
-
-      // Create projects in the database
+      
       const validProjects = projects.filter(p => p.name && p.link);
-
+      
       if (validProjects.length > 0) {
         toast({
           title: "Projects saved",
