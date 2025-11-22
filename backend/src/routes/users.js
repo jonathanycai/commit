@@ -178,4 +178,27 @@ router.put("/:id", requireAuth, async (req, res) => {
     }
 });
 
+router.get("/check-username/:username", async (req, res) => {
+    try {
+        const { username } = req.params;
+
+        const { data, error } = await supabase
+            .from("users")
+            .select("username")
+            .eq("username", username)
+            .single();
+
+        // If we find a row, the username is taken
+        if (data) {
+            return res.json({ available: false });
+        }
+
+        // If no row found (error code PGRST116), it's available
+        return res.json({ available: true });
+    } catch (error) {
+        // If error is "Row not found", that's good - username is available
+        return res.json({ available: true });
+    }
+});
+
 export default router;
