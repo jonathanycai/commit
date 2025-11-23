@@ -107,9 +107,10 @@ router.put("/profile", requireAuth, async (req, res) => {
         if (project_links !== undefined) updateData.project_links = project_links; // ✅ Add support
 
         // Ensure defaults so Supabase doesn't choke on missing values
-        if (!updateData.socials) updateData.socials = {};
-        if (!updateData.tech_tags) updateData.tech_tags = [];
-        if (!updateData.project_links) updateData.project_links = [];
+        // if (!updateData.socials) updateData.socials = {};
+        // if (!updateData.tech_tags) updateData.tech_tags = [];
+        // if (!updateData.project_links) updateData.project_links = []; 
+        // this shit highkey sus, forces empty defaults, not necessary w new auth format type shit
 
         const { data, error } = await supabase
             .from("users")
