@@ -151,7 +151,7 @@ router.get("/successful", requireAuth, async (req, res) => {
 router.get("/received", requireAuth, async (req, res) => {
     try {
         console.log('Fetching received requests for user:', req.user.id);
-        
+
         const { data, error } = await supabase
             .from('applications')
             .select(`
@@ -188,7 +188,7 @@ router.get("/received", requireAuth, async (req, res) => {
         }
 
         console.log('Found', data.length, 'received requests');
-        
+
         res.json({
             received_requests: data,
             count: data.length
@@ -417,7 +417,7 @@ router.get("/project/:projectId", requireAuth, async (req, res) => {
 router.get("/matches", requireAuth, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // Get successful applications (where user applied and was accepted)
         const { data: successfulApps, error: successfulError } = await supabase
             .from('applications')
@@ -460,7 +460,7 @@ router.get("/matches", requireAuth, async (req, res) => {
                 blurb,
                 status,
                 created_at,
-                projects (
+                projects!inner (
                     id,
                     title,
                     description,
