@@ -15,6 +15,7 @@ import { z } from "zod";
 import homepageBg from "@/assets/homepage-bg.svg";
 import mascotBuilder from "@/assets/mascot-builder.svg";
 import ProgressSidebar from "@/components/registration/ProgressSidebar";
+import { checkUsername } from "@/lib/api";
 
 const profileSchema = z.object({
   username: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -66,7 +67,7 @@ const RegisterStep1 = () => {
 
       setIsLoading(true);
 
-      const { available } = await apiService.checkUsername(username);
+      const { available } = await checkUsername(username);
 
       if (!available) {
         toast({
@@ -77,7 +78,7 @@ const RegisterStep1 = () => {
         setIsLoading(false);
         return;
       }
-        
+
       sessionStorage.setItem(
         'registerStep1',
         JSON.stringify({
@@ -87,7 +88,7 @@ const RegisterStep1 = () => {
           timeCommitment,
         })
       );
-      
+
       toast({
         title: "Basics saved",
         description: "Next, add your past projects.",

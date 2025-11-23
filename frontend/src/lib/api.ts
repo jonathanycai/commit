@@ -237,6 +237,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   return response.json();
 };
 
+export const checkUsername = async (username: string) => {
+  return apiService.checkUsername(username);
+};
+
 // Get next project for user swiping
 export const getNextProject = async (userId: string) => {
   return apiRequest(`/swipes/next-project?userId=${userId}`);
