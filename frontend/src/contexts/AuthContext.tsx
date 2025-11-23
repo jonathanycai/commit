@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiService, AuthResponse } from '@/lib/api';
+import { apiService, AuthResponse, UserProfile } from '@/lib/api';
 
 interface User {
   id: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+  // Auth fields (might be present from register)
+  created_at?: string;
+  updated_at?: string;
+  // Profile fields (optional, because they don't exist immediately after register)
+  username?: string;
+  role?: string;
+  experience?: string;
+  time_commitment?: string;
+  tech_tags?: string[];
+  project_links?: string[];
 }
 
 interface AuthContextType {
@@ -70,11 +78,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response: AuthResponse = await apiService.login({ email, password });
-      
+
       // Store tokens
       localStorage.setItem('access_token', response.session.access_token);
       localStorage.setItem('refresh_token', response.session.refresh_token);
-      
+
       // Set user
       setUser(response.user);
     } catch (error) {
@@ -89,11 +97,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response: AuthResponse = await apiService.register({ email, password });
-      
+
       // Store tokens
       localStorage.setItem('access_token', response.session.access_token);
       localStorage.setItem('refresh_token', response.session.refresh_token);
-      
+
       // Set user
       setUser(response.user);
     } catch (error) {

@@ -27,6 +27,8 @@ export interface RegisterRequest {
 }
 
 export interface UserProfile {
+  id: string;
+  email: string;
   username: string;
   role: string;
   experience: string;
@@ -34,6 +36,7 @@ export interface UserProfile {
   socials?: Record<string, string>;
   tech_tags?: string[];
   project_links?: string[];
+  created_at?: string;
 }
 
 export interface UserProfileResponse {
@@ -149,7 +152,7 @@ class ApiService {
   }
 
   // User profile methods
-  async createUserProfile(profile: UserProfile): Promise<UserProfileResponse> {
+  async createUserProfile(profile: Omit<UserProfile, 'id' | 'email' | 'created_at'>): Promise<UserProfileResponse> {
     return this.request<UserProfileResponse>('/users', {
       method: 'POST',
       body: JSON.stringify(profile),
