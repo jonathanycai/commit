@@ -104,7 +104,7 @@ const RegisterStep1 = () => {
       } else {
         toast({
           title: "Profile creation failed",
-          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+          description: "Something went wrong. Please try again.",
           variant: "destructive",
         });
       }
