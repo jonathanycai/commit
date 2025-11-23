@@ -162,29 +162,31 @@ const RegisterStep3 = () => {
         experience: step1Data.experience,
         role: step1Data.role,
         time_commitment: step1Data.timeCommitment,
-      });
-
-      if (projectsToCreate.length > 0) {
-        for (const project of projectsToCreate) {
-          try {
-            await apiService.createProject({
-              title: project.name,
-              project_name: project.link,
-              description: `Project created during registration: ${project.name}`,
-              tags: [],
-              looking_for: [],
-              is_active: true,
-            });
-          } catch (error) {
-            console.error("Failed to create project:", project.name, error);
-          }
-        }
-      }
-
-      await apiService.updateUserProfile({
         socials: socialsData,
-        project_links,
+        project_links
       });
+
+      // if (projectsToCreate.length > 0) {
+      //   for (const project of projectsToCreate) {
+      //     try {
+      //       await apiService.createProject({
+      //         title: project.name,
+      //         project_name: project.link,
+      //         description: `Project created during registration: ${project.name}`,
+      //         tags: [],
+      //         looking_for: [],
+      //         is_active: true,
+      //       });
+      //     } catch (error) {
+      //       console.error("Failed to create project:", project.name, error);
+      //     }
+      //   }
+      // }
+
+      // await apiService.updateUserProfile({
+      //   socials: socialsData,
+      //   project_links,
+      // });
 
       toast({
         title: "Registration complete!",
