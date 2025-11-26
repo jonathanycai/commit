@@ -15,7 +15,7 @@ const supabase = createClient(
 router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
@@ -29,10 +29,10 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'User registered successfully', 
+        res.json({
+            message: 'User registered successfully',
             user: data.user,
-            session: data.session 
+            session: data.session
         });
     } catch (error) {
         res.status(500).json({ error: 'Registration failed' });
@@ -43,7 +43,7 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
 router.post("/login", authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
@@ -57,10 +57,10 @@ router.post("/login", authLimiter, async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
 
-        res.json({ 
-            message: 'Login successful', 
+        res.json({
+            message: 'Login successful',
             user: data.user,
-            session: data.session 
+            session: data.session
         });
     } catch (error) {
         res.status(500).json({ error: 'Login failed' });
@@ -69,10 +69,10 @@ router.post("/login", authLimiter, async (req, res) => {
 
 // Auth health check
 router.get("/health", requireAuth, (req, res) => {
-    res.json({ 
-        ok: true, 
+    res.json({
+        ok: true,
         userId: req.user.id,
-        email: req.user.email 
+        email: req.user.email
     });
 });
 

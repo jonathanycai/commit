@@ -9,6 +9,7 @@ import projectRoutes from "./routes/projects.js";
 import notificationRoutes from "./routes/notifications.js";
 import swipesRoutes from "./swipes/routes.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
+import globalErrorHandler from "./middleware/errorHandler.js";
 
 const app = express();
 app.use(cors());
@@ -44,6 +45,8 @@ app.use("/notifications", notificationRoutes);
 
 // Swipes functionality
 app.use("/swipes", swipesRoutes);
+
+app.use(globalErrorHandler);
 
 // Start the server
 app.listen(process.env.PORT || 4000, () =>

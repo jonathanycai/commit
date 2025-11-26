@@ -117,6 +117,15 @@ class ApiService {
     try {
       const response = await fetch(url, config);
 
+      if (response.status === 401) {
+        console.warn('Session expired. Redirecting to login...');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        // Force a hard redirect to clear React state
+        window.location.href = '/auth';
+        throw new Error('Session expired. Please log in again.');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -218,6 +227,14 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       ...options.headers,
     },
   });
+
+  if (response.status === 401) {
+    console.warn('Session expired. Redirecting to login...');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    window.location.href = '/auth';
+    throw new Error('Session expired. Please log in again.');
+  }
 
   if (!response.ok) {
     let errorMessage = 'Unknown error';
