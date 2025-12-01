@@ -64,7 +64,7 @@ const Navbar = () => {
         {/* Center Nav Links */}
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8">
           {[
-            { path: "/", label: "home" },
+            { path: "/home", label: "home" },
             { path: "/match", label: "swipe" },
             { path: "/projects", label: "browse projects" },
             { path: "/profile", label: "my commits" },
