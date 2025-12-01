@@ -17,6 +17,7 @@ import RegisterStep1 from "./pages/RegisterStep1";
 import RegisterStep2 from "./pages/RegisterStep2";
 import RegisterStep3 from "./pages/RegisterStep3";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,19 +29,22 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/match" element={<Match />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/create-project" element={<CreateProject />} />
-            <Route path="/welcome" element={<Welcome />} />
+            <Route path="/" element={<Welcome />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/step1" element={<RegisterStep1 />} />
             <Route path="/register/step2" element={<RegisterStep2 />} />
             <Route path="/register/step3" element={<RegisterStep3 />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+            {/* --- PROTECTED ROUTES (Only accessible if logged in) --- */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/match" element={<Match />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/create-project" element={<CreateProject />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -22,7 +22,7 @@ const Match = () => {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // Get user ID from token
   const token = localStorage.getItem('access_token');
   const getUserIdFromToken = () => {
@@ -50,7 +50,7 @@ const Match = () => {
       const date = new Date(dateString);
       const now = new Date();
       const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-      
+
       if (diffInSeconds < 60) return "Just now";
       if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
       if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${diffInSeconds >= 7200 ? 's' : ''} ago`;
@@ -63,9 +63,9 @@ const Match = () => {
   const fetchNextProject = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       const project = await getNextProject(userId);
-      
+
       if (project.message || !project.id) {
         setIsLoading(false);
         setCurrentProject(null);
@@ -89,7 +89,7 @@ const Match = () => {
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching project:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load project";
+      const errorMessage = "Failed to load project";
       toast.error(errorMessage);
       setIsLoading(false);
       setCurrentProject(null);
@@ -103,16 +103,16 @@ const Match = () => {
 
     try {
       setIsProcessing(true);
-      
+
       // Record swipe as "pass"
       await recordProjectSwipe(userId, projectId, 'pass');
       toast.error("Not my thing");
-      
+
       // Move to next card after API call completes
       await fetchNextProject();
     } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to record swipe";
+      const errorMessage = "Failed to record swipe";
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -126,10 +126,10 @@ const Match = () => {
 
     try {
       setIsProcessing(true);
-      
+
       // Record swipe as "like"
       await recordProjectSwipe(userId, projectId, 'like');
-      
+
       // Also create an application request to the project owner
       try {
         const appResult = await applyToProject(projectId);
@@ -143,14 +143,14 @@ const Match = () => {
           toast.error(`Application failed: ${errorMessage}`);
         }
       }
-      
+
       toast.success("Down to commit! 🎉");
-      
+
       // Move to next card after API call completes
       await fetchNextProject();
     } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to record swipe";
+      const errorMessage = "Failed to record swipe";
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -159,32 +159,32 @@ const Match = () => {
 
   return (
     <div className="min-h-screen bg-background font-lexend overflow-hidden">
-      <div 
+      <div
         className="fixed inset-0 z-0"
-        style={{ 
+        style={{
           backgroundImage: `url(${homepageBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       />
-      
+
       <div className="relative z-10">
         <Navbar />
-        
+
         <div className="container mx-auto px-4 pt-24 pb-12">
           <div className="flex items-start justify-between gap-8">
             {/* Single Card Display */}
             <div className="w-[550px] flex-shrink-0 relative" style={{ minHeight: '650px' }}>
               {isLoading ? (
-                <div 
+                <div
                   className="rounded-[32px] p-[3px]"
-                  style={{ 
+                  style={{
                     background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
                   }}
                 >
-                  <div 
+                  <div
                     className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
-                    style={{ 
+                    style={{
                       backgroundColor: 'rgba(46, 52, 88, 0.7)',
                       backdropFilter: 'blur(10px)',
                     }}
@@ -203,15 +203,15 @@ const Match = () => {
                   isInteractive={!isProcessing}
                 />
               ) : (
-                <div 
+                <div
                   className="rounded-[32px] p-[3px]"
-                  style={{ 
+                  style={{
                     background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
                   }}
                 >
-                  <div 
+                  <div
                     className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
-                    style={{ 
+                    style={{
                       backgroundColor: 'rgba(46, 52, 88, 0.7)',
                       backdropFilter: 'blur(10px)',
                     }}
@@ -219,7 +219,7 @@ const Match = () => {
                     <div className="text-center space-y-4">
                       <h3 className="text-3xl font-bold text-white">No projects left</h3>
                       <p className="text-white/60">Check back later for more projects!</p>
-                      <Button 
+                      <Button
                         onClick={fetchNextProject}
                         className="mt-4 rounded-xl"
                         style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
@@ -234,7 +234,7 @@ const Match = () => {
 
             {/* Right Side - Mascots and Buttons */}
             <div className="flex-1 flex flex-col items-center justify-center space-y-12 max-w-none pt-16">
-              <h2 
+              <h2
                 className="text-5xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
                 style={{
                   WebkitBackgroundClip: 'text',
@@ -248,17 +248,17 @@ const Match = () => {
               <div className="flex items-end justify-center gap-12 w-full">
                 {/* Left Mascot with Button */}
                 <div className="flex flex-col items-center gap-4">
-                  <img 
-                    src={mascotHappy} 
-                    alt="" 
+                  <img
+                    src={mascotHappy}
+                    alt=""
                     className="animate-float"
-                    style={{ 
+                    style={{
                       animation: 'float 3s ease-in-out infinite',
                       width: '235px',
                       maxWidth: 'none'
                     }}
                   />
-                  <Button 
+                  <Button
                     onClick={handleSwipeRight}
                     disabled={isProcessing || !currentProject}
                     className="h-12 px-6 rounded-xl font-medium"
@@ -272,13 +272,13 @@ const Match = () => {
 
                 {/* Right Mascot with Button */}
                 <div className="flex flex-col items-center gap-4">
-                  <img 
-                    src={mascotSad} 
-                    alt="" 
+                  <img
+                    src={mascotSad}
+                    alt=""
                     className="w-[200px] animate-float"
                     style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}
                   />
-                  <Button 
+                  <Button
                     onClick={handleSwipeLeft}
                     disabled={isProcessing || !currentProject}
                     variant="outline"

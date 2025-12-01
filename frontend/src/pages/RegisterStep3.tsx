@@ -198,7 +198,7 @@ const RegisterStep3 = () => {
       sessionStorage.removeItem("registerStep2");
       sessionStorage.removeItem("registerStep3");
 
-      setTimeout(() => navigate("/"), 600);
+      setTimeout(() => navigate("/home"), 600);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({

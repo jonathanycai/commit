@@ -26,7 +26,7 @@ const Auth = () => {
           title: "Login successful",
           description: "Welcome back!",
         });
-        navigate('/');
+        navigate('/home');
       } else {
         sessionStorage.setItem(
           'pendingRegistration',
