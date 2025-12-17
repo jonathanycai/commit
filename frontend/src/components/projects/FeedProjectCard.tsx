@@ -11,6 +11,7 @@ interface FeedProjectCardProps {
         };
         looking_for?: string[];
         tags?: string[];
+        time_commitment?: string;
     };
     isApplying: boolean;
     hasApplied: boolean;
@@ -69,6 +70,17 @@ const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProje
                             {role}
                         </span>
                     ))}
+                    {project.time_commitment && (
+                        <span
+                            className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{
+                                backgroundColor: "#79B1DF",
+                                color: "#111118",
+                            }}
+                        >
+                            {project.time_commitment}
+                        </span>
+                    )}
                 </div>
 
                 <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">

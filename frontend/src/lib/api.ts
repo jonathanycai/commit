@@ -52,6 +52,7 @@ export interface Project {
   description?: string;
   tags?: string[];
   looking_for?: string[];
+  time_commitment?: string;
   is_active?: boolean;
   created_at?: string;
 }
@@ -331,6 +332,7 @@ export const createProject = async (projectData: {
   description?: string;
   tags?: string[];
   looking_for?: string[];
+  time_commitment?: string;
 }) => {
   return apiRequest('/projects', {
     method: 'POST',

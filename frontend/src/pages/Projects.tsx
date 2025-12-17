@@ -130,6 +130,7 @@ const Projects = () => {
         description: projectDescription,
         tags: [],
         looking_for: dialogRoles,
+        time_commitment: dialogTimeCommitment,
       };
 
       await createProject(projectData);
