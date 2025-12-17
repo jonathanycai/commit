@@ -162,7 +162,12 @@ router.get("/", async (req, res) => {
 
         if (time_commitment) {
             const timeArray = toArray(time_commitment);
-            if (timeArray.length > 0) query = query.in("users.time_commitment", timeArray);
+            if (timeArray.length > 0) {
+                // Filter by project's time_commitment OR user's time_commitment
+                // Note: Supabase doesn't support OR across different tables easily in one query builder chain
+                // So we'll filter by project's time_commitment primarily, as that's the new standard
+                query = query.in("time_commitment", timeArray);
+            }
         }
 
         // Execute query
