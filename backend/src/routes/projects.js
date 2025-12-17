@@ -12,7 +12,7 @@ const supabase = createClient(
 // Create a new project
 router.post("/", requireAuth, async (req, res) => {
     try {
-        const { title, description, tags, looking_for } = req.body;
+        const { title, description, tags, looking_for, time_commitment } = req.body;
 
         if (!title) {
             return res.status(400).json({ error: 'Project title is required' });
@@ -27,6 +27,7 @@ router.post("/", requireAuth, async (req, res) => {
                 description: description || '',
                 tags: tags || [],
                 looking_for: looking_for || [],
+                time_commitment: time_commitment || null,
                 is_active: true
             })
             .select(`
@@ -36,6 +37,7 @@ router.post("/", requireAuth, async (req, res) => {
                 description,
                 tags,
                 looking_for,
+                time_commitment,
                 is_active,
                 created_at,
                 users!projects_owner_id_fkey (
@@ -73,6 +75,16 @@ router.get("/", async (req, res) => {
             search,
         } = req.query;
 
+        // Check for optional auth to filter out own/applied projects
+        let currentUserId = null;
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (token) {
+            const { data: { user }, error } = await supabase.auth.getUser(token);
+            if (!error && user) {
+                currentUserId = user.id;
+            }
+        }
+
         const toArray = (val) => {
             if (!val) return [];
             if (Array.isArray(val)) return val;
@@ -89,6 +101,7 @@ router.get("/", async (req, res) => {
         description,
         tags,
         looking_for,
+        time_commitment,
         is_active,
         created_at,
         users!projects_owner_id_fkey (
@@ -103,6 +116,23 @@ router.get("/", async (req, res) => {
             )
             .eq("is_active", is_active === "true")
             .order("created_at", { ascending: false });
+
+        // Apply user-specific filters if logged in
+        if (currentUserId) {
+            // 1. Exclude own projects
+            query = query.neq('owner_id', currentUserId);
+
+            // 2. Exclude applied projects
+            const { data: applications } = await supabase
+                .from('applications')
+                .select('project_id')
+                .eq('user_id', currentUserId);
+
+            if (applications && applications.length > 0) {
+                const appliedProjectIds = applications.map(app => app.project_id);
+                query = query.not('id', 'in', `(${appliedProjectIds.join(',')})`);
+            }
+        }
 
         if (search && search.trim()) {
             query = query.or(
@@ -132,7 +162,12 @@ router.get("/", async (req, res) => {
 
         if (time_commitment) {
             const timeArray = toArray(time_commitment);
-            if (timeArray.length > 0) query = query.in("users.time_commitment", timeArray);
+            if (timeArray.length > 0) {
+                // Filter by project's time_commitment OR user's time_commitment
+                // Note: Supabase doesn't support OR across different tables easily in one query builder chain
+                // So we'll filter by project's time_commitment primarily, as that's the new standard
+                query = query.in("time_commitment", timeArray);
+            }
         }
 
         // Execute query
@@ -164,7 +199,7 @@ router.get("/", async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
     try {
         const projectId = req.params.id;
-        const { title, description, tags, looking_for, is_active } = req.body;
+        const { title, description, tags, looking_for, time_commitment, is_active } = req.body;
 
         // Check if project exists and user owns it
         const { data: existingProject, error: fetchError } = await supabase
@@ -189,6 +224,7 @@ router.put("/:id", requireAuth, async (req, res) => {
                 description,
                 tags: tags || [],
                 looking_for: looking_for || [],
+                time_commitment: time_commitment || null,
                 is_active: is_active !== undefined ? is_active : true
             })
             .eq('id', projectId)
@@ -199,6 +235,7 @@ router.put("/:id", requireAuth, async (req, res) => {
                 description,
                 tags,
                 looking_for,
+                time_commitment,
                 is_active,
                 created_at,
                 users!projects_owner_id_fkey (
@@ -274,6 +311,7 @@ router.get("/my/projects", requireAuth, async (req, res) => {
                 description,
                 tags,
                 looking_for,
+                time_commitment,
                 is_active,
                 created_at
             `)
@@ -309,6 +347,7 @@ router.get("/search/:query", async (req, res) => {
                 description,
                 tags,
                 looking_for,
+                time_commitment,
                 is_active,
                 created_at,
                 users!projects_owner_id_fkey (
