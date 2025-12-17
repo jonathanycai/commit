@@ -1,5 +1,5 @@
 import React from "react";
-import { Linkedin, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { Linkedin, ChevronLeft, ChevronRight, Check, X, Mail, Link as LinkIcon, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface RequestCardProps {
@@ -56,14 +56,25 @@ const RequestCard = ({
                                 </div>
                             </div>
 
-                            {applicant.tech_tags && applicant.tech_tags.length > 0 && (
+                            {applicant.project_links && applicant.project_links.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm font-semibold text-white mb-2">Tech Stack</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {applicant.tech_tags.map((tag: string, idx: number) => (
-                                            <span key={idx} className="text-xs text-white/80">
-                                                {tag}
-                                            </span>
+                                    <h4 className="text-sm font-semibold text-white mb-2">Projects</h4>
+                                    <div className="flex flex-col gap-2">
+                                        {applicant.project_links.map((link: string, idx: number) => (
+                                            <a
+                                                key={idx}
+                                                href={link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 text-white hover:text-primary transition-colors group"
+                                            >
+                                                <div className="h-7 w-7 rounded-full flex-shrink-0 bg-white/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                    <LinkIcon className="h-3.5 w-3.5 text-white group-hover:text-primary transition-colors" />
+                                                </div>
+                                                <span className="text-xs truncate opacity-90 group-hover:opacity-100 transition-opacity" title={link}>
+                                                    {link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                                                </span>
+                                            </a>
                                         ))}
                                     </div>
                                 </div>
@@ -72,15 +83,48 @@ const RequestCard = ({
                             <div>
                                 <h4 className="text-sm font-semibold text-white mb-2">Socials</h4>
                                 <div className="flex flex-col gap-2">
+                                    {applicant.email && (
+                                        <a
+                                            href={`mailto:${applicant.email}`}
+                                            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
+                                        >
+                                            <div className="h-7 w-7 rounded-full flex-shrink-0 bg-white flex items-center justify-center">
+                                                <Mail className="h-4 w-4 text-primary" />
+                                            </div>
+                                            <span className="text-xs break-words truncate" title={applicant.email}>
+                                                {applicant.email}
+                                            </span>
+                                        </a>
+                                    )}
+                                    {applicant.socials?.github && (
+                                        <a
+                                            href={applicant.socials.github}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
+                                        >
+                                            <div className="h-7 w-7 rounded-full flex-shrink-0 bg-black flex items-center justify-center">
+                                                <Github className="h-4 w-4 text-white" />
+                                            </div>
+                                            <span className="text-xs break-words truncate" title={applicant.socials.github}>
+                                                {applicant.socials.github}
+                                            </span>
+                                        </a>
+                                    )}
                                     {applicant.socials?.linkedin && (
-                                        <div className="flex items-center gap-2 text-white">
+                                        <a
+                                            href={applicant.socials.linkedin}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
+                                        >
                                             <div className="h-7 w-7 rounded-full flex-shrink-0" style={{ backgroundColor: '#0A66C2' }}>
                                                 <Linkedin className="h-7 w-7 p-1.5" />
                                             </div>
                                             <span className="text-xs break-words truncate" title={applicant.socials.linkedin}>
                                                 {applicant.socials.linkedin}
                                             </span>
-                                        </div>
+                                        </a>
                                     )}
                                     {applicant.socials?.discord && (
                                         <div className="flex items-center gap-2 text-white">
