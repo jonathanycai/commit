@@ -73,6 +73,16 @@ router.get("/", async (req, res) => {
             search,
         } = req.query;
 
+        // Check for optional auth to filter out own/applied projects
+        let currentUserId = null;
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (token) {
+            const { data: { user }, error } = await supabase.auth.getUser(token);
+            if (!error && user) {
+                currentUserId = user.id;
+            }
+        }
+
         const toArray = (val) => {
             if (!val) return [];
             if (Array.isArray(val)) return val;
@@ -103,6 +113,23 @@ router.get("/", async (req, res) => {
             )
             .eq("is_active", is_active === "true")
             .order("created_at", { ascending: false });
+
+        // Apply user-specific filters if logged in
+        if (currentUserId) {
+            // 1. Exclude own projects
+            query = query.neq('owner_id', currentUserId);
+
+            // 2. Exclude applied projects
+            const { data: applications } = await supabase
+                .from('applications')
+                .select('project_id')
+                .eq('user_id', currentUserId);
+
+            if (applications && applications.length > 0) {
+                const appliedProjectIds = applications.map(app => app.project_id);
+                query = query.not('id', 'in', `(${appliedProjectIds.join(',')})`);
+            }
+        }
 
         if (search && search.trim()) {
             query = query.or(
