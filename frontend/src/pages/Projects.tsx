@@ -303,9 +303,9 @@ const Projects = () => {
             </div>
 
             {/* Main content */}
-            <div className="flex-1 space-y-6 min-w-0">
+            <div className="flex-1 space-y-14 min-w-0">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white">
                   Showing {projects.length || 0} results
                 </p>
                 <Button

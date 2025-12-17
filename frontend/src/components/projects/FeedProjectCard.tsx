@@ -24,7 +24,7 @@ const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProje
             className="rounded-3xl p-[2px]"
             style={{
                 background:
-                    "linear-gradient(135deg, rgba(157, 156, 255, 0.6), rgba(166, 244, 197, 0.6))",
+                    "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
             }}
         >
             <div
@@ -83,7 +83,7 @@ const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProje
                     )}
                 </div>
 
-                <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
+                <p className="text-sm text-white leading-relaxed break-words whitespace-pre-wrap">
                     {project.description}
                 </p>
             </div>
