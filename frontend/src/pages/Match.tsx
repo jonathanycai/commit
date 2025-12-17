@@ -171,71 +171,87 @@ const Match = () => {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="container mx-auto px-4 pt-24 pb-12">
+        <div className="container mx-auto px-4 pt-40 pb-12">
           <div className="flex items-start justify-between gap-8">
             {/* Single Card Display */}
-            <div className="w-[550px] flex-shrink-0 relative" style={{ minHeight: '650px' }}>
-              {isLoading ? (
-                <div
-                  className="rounded-[32px] p-[3px]"
-                  style={{
-                    background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
-                  }}
-                >
+            <div className="w-[550px] flex-shrink-0 relative">
+              {/* Card Stack Effect */}
+              {!isLoading && currentProject && (
+                <>
                   <div
-                    className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
-                    style={{
-                      backgroundColor: 'rgba(46, 52, 88, 0.7)',
-                      backdropFilter: 'blur(10px)',
-                    }}
-                  >
-                    <div className="text-center space-y-4">
-                      <h3 className="text-3xl font-bold text-white">Loading...</h3>
-                      <p className="text-white/60">Finding projects for you</p>
-                    </div>
-                  </div>
-                </div>
-              ) : currentProject ? (
-                <SwipeCard
-                  project={currentProject}
-                  onSwipeLeft={handleSwipeLeft}
-                  onSwipeRight={handleSwipeRight}
-                  isInteractive={!isProcessing}
-                />
-              ) : (
-                <div
-                  className="rounded-[32px] p-[3px]"
-                  style={{
-                    background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
-                  }}
-                >
+                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#6789EC]/5 bg-[#141623]/50"
+                    style={{ transform: 'translate(-16px, -16px)', zIndex: 0 }}
+                  />
                   <div
-                    className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
-                    style={{
-                      backgroundColor: 'rgba(46, 52, 88, 0.7)',
-                      backdropFilter: 'blur(10px)',
-                    }}
-                  >
-                    <div className="text-center space-y-4">
-                      <h3 className="text-3xl font-bold text-white">No projects left</h3>
-                      <p className="text-white/60">Check back later for more projects!</p>
-                      <Button
-                        onClick={fetchNextProject}
-                        className="mt-4 rounded-xl"
-                        style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
-                      >
-                        Try Again
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#6789EC]/10 bg-[#141623]/30"
+                    style={{ transform: 'translate(-32px, -32px)', zIndex: -1 }}
+                  />
+                </>
               )}
+
+              <div className="relative z-10 h-full">
+                {isLoading ? (
+                  <div
+                    className="rounded-[32px] p-[3px]"
+                    style={{
+                      background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
+                    }}
+                  >
+                    <div
+                      className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
+                      style={{
+                        backgroundColor: 'rgba(46, 52, 88, 0.7)',
+                        backdropFilter: 'blur(10px)',
+                      }}
+                    >
+                      <div className="text-center space-y-4">
+                        <h3 className="text-3xl font-bold text-white">Loading...</h3>
+                        <p className="text-white/60">Finding projects for you</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : currentProject ? (
+                  <SwipeCard
+                    project={currentProject}
+                    onSwipeLeft={handleSwipeLeft}
+                    onSwipeRight={handleSwipeRight}
+                    isInteractive={!isProcessing}
+                  />
+                ) : (
+                  <div
+                    className="rounded-[32px] p-[3px]"
+                    style={{
+                      background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
+                    }}
+                  >
+                    <div
+                      className="rounded-[32px] p-8 h-[600px] flex items-center justify-center"
+                      style={{
+                        backgroundColor: 'rgba(46, 52, 88, 0.7)',
+                        backdropFilter: 'blur(10px)',
+                      }}
+                    >
+                      <div className="text-center space-y-4">
+                        <h3 className="text-3xl font-bold text-white">No projects left</h3>
+                        <p className="text-white/60">Check back later for more projects!</p>
+                        <Button
+                          onClick={fetchNextProject}
+                          className="mt-4 rounded-xl"
+                          style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Side - Mascots and Buttons */}
             <div className="flex-1 flex flex-col items-center justify-center space-y-12 max-w-none pt-16">
               <h2
-                className="text-5xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
+                className="text-3xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
                 style={{
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',

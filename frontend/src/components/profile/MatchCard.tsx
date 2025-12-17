@@ -17,9 +17,9 @@ const MatchCard = ({ match }: MatchCardProps) => {
 
   return (
     <div
-      className="rounded-2xl p-[2px]"
+      className="rounded-2xl p-[1px]"
       style={{
-        background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
+        background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))"
       }}
     >
       <div
@@ -31,9 +31,9 @@ const MatchCard = ({ match }: MatchCardProps) => {
       >
         <div className="space-y-4">
           {/* Header: Project name and user name */}
-          <div className="flex items-start justify-between">
-            <h2 className="text-2xl font-bold text-white">{project.title}</h2>
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-2xl font-bold text-white break-words flex-1 min-w-0">{project.title}</h2>
+            <div className="flex items-center gap-2 shrink-0">
               <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
                 {displayName.charAt(0).toUpperCase()}
               </div>
@@ -60,7 +60,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
           </div>
 
           {/* Project description */}
-          <p className="text-sm text-white/90 leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed break-words line-clamp-2">
             {project.description}
           </p>
 
