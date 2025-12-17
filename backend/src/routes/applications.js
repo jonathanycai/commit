@@ -263,9 +263,13 @@ router.post("/:id/approve", requireAuth, async (req, res) => {
                     username,
                     email,
                     role,
-                    experience
+                    experience,
+                    time_commitment,
+                    socials,
+                    tech_tags,
+                    project_links
                 )
-            `)
+            `) // can add tech_tags when we eventually implement this feature
             .single();
 
         if (error) {
