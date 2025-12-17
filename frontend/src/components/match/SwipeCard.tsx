@@ -150,7 +150,7 @@ const SwipeCard = ({
   return (
     <div
       ref={cardRef}
-      className="rounded-[32px] p-[3px] select-none"
+      className="rounded-[32px] p-[1px] select-none"
       style={{
         background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
         transform: `translate(${isAnimatingOut ? targetX : position.x}px, ${isAnimatingOut ? targetY : position.y}px) rotate(${rotation}deg) scale(${scale})`,
@@ -169,9 +169,9 @@ const SwipeCard = ({
         }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="space-y-3">
-            <h2 className="text-4xl font-bold text-white">{project.title}</h2>
+        <div className="flex items-start justify-between mb-6 gap-4">
+          <div className="space-y-3 flex-1 min-w-0">
+            <h2 className="text-4xl font-bold text-white break-words leading-tight">{project.title}</h2>
             <div className="flex flex-wrap gap-2">
               {project.roles.map((role) => (
                 <span
@@ -220,7 +220,7 @@ const SwipeCard = ({
 
         {/* Description */}
         <div className="space-y-4">
-          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line break-words">
             {project.description}
           </p>
         </div>

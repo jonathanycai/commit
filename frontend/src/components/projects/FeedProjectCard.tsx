@@ -21,7 +21,7 @@ interface FeedProjectCardProps {
 const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProjectCardProps) => {
     return (
         <div
-            className="rounded-3xl p-[2px]"
+            className="rounded-3xl p-[1px]"
             style={{
                 background:
                     "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
