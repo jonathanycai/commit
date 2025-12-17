@@ -175,7 +175,7 @@ router.get("/received", requireAuth, async (req, res) => {
                     experience,
                     time_commitment,
                     socials,
-                    tech_tags
+                    project_links
                 )
             `)
             .eq('projects.owner_id', req.user.id)
@@ -263,9 +263,12 @@ router.post("/:id/approve", requireAuth, async (req, res) => {
                     username,
                     email,
                     role,
-                    experience
+                    experience,
+                    time_commitment,
+                    socials,
+                    project_links
                 )
-            `)
+            `) // can add tech_tags when we eventually implement this feature
             .single();
 
         if (error) {
