@@ -19,7 +19,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
     <div
       className="rounded-2xl p-[2px]"
       style={{
-        background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
+        background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))"
       }}
     >
       <div
