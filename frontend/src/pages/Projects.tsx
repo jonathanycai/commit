@@ -236,7 +236,7 @@ const Projects = () => {
               </div>
 
               {/* Experience */}
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <Label className="text-sm font-semibold">Experience Level</Label>
                 <div className="space-y-3">
                   {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
@@ -255,7 +255,7 @@ const Projects = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Roles */}
               <div className="space-y-4">
