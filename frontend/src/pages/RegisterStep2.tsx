@@ -87,9 +87,9 @@ const RegisterStep2 = () => {
       }
 
       setIsLoading(true);
-      
+
       const validProjects = projects.filter(p => p.name && p.link);
-      
+
       if (validProjects.length > 0) {
         toast({
           title: "Projects saved",
@@ -148,77 +148,71 @@ const RegisterStep2 = () => {
 
           {/* Right side - Form Card */}
           <div
-            className="rounded-2xl p-[2px]"
+            className="rounded-2xl p-10"
             style={{
-              background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)',
-              width: '500px'
+              backgroundColor: 'rgba(20, 22, 35, 0.95)',
+              backdropFilter: 'blur(10px)',
+              width: '500px',
+              border: '1.35px solid rgba(103, 137, 236, 1)'
             }}
           >
-            <div
-              className="rounded-2xl p-10 relative"
-              style={{
-                backgroundColor: 'rgba(20, 22, 35, 0.95)',
-                backdropFilter: 'blur(10px)'
-              }}
+            <button
+              onClick={() => navigate('/auth')}
+              className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
             >
-              <button
-                onClick={() => navigate('/auth')}
-                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
+              <X size={24} />
+            </button>
 
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-1">
-                  show your work.
-                </h2>
-                <p className="text-sm text-white/70">
-                  proof you've built before (or tried).
-                </p>
-              </div>
-
-              <form onSubmit={handleNext} className="space-y-5">
-                {projects.map((project, index) => (
-                  <div key={index} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">
-                        Project #{index + 1} Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="link"
-                        value={project.name}
-                        onChange={(e) => handleProjectChange(index, 'name', e.target.value)}
-                        className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">
-                        Project #{index + 1} Link
-                      </label>
-                      <Input
-                        type="url"
-                        placeholder="link"
-                        value={project.link}
-                        onChange={(e) => handleProjectChange(index, 'link', e.target.value)}
-                        className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <Button
-                  type="button"
-                  onClick={handleAddProject}
-                  variant="ghost"
-                  className="w-full h-11 rounded-xl font-medium text-white border border-white/20 hover:bg-white/5"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add project
-                </Button>
-              </form>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-1">
+                show your work.
+              </h2>
+              <p className="text-sm text-white/70">
+                proof you've built before (or tried).
+              </p>
             </div>
+
+            <form onSubmit={handleNext} className="space-y-5">
+              {projects.map((project, index) => (
+                <div key={index} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Project #{index + 1} Name
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="link"
+                      value={project.name}
+                      onChange={(e) => handleProjectChange(index, 'name', e.target.value)}
+                      className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Project #{index + 1} Link
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="link"
+                      value={project.link}
+                      onChange={(e) => handleProjectChange(index, 'link', e.target.value)}
+                      className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                onClick={handleAddProject}
+                variant="ghost"
+                className="w-full h-11 rounded-xl font-medium text-white border border-white/20 hover:bg-white/5"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add project
+              </Button>
+            </form>
           </div>
         </div>
       </div>

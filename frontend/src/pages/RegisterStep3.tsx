@@ -248,89 +248,83 @@ const RegisterStep3 = () => {
 
           {/* Right side - Form Card */}
           <div
-            className="rounded-2xl p-[2px]"
+            className="rounded-2xl p-10"
             style={{
-              background: "linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)",
-              width: "500px",
+              backgroundColor: 'rgba(20, 22, 35, 0.95)',
+              backdropFilter: 'blur(10px)',
+              width: '500px',
+              border: '1.35px solid rgba(103, 137, 236, 1)'
             }}
           >
-            <div
-              className="rounded-2xl p-10 relative"
-              style={{
-                backgroundColor: "rgba(20, 22, 35, 0.95)",
-                backdropFilter: "blur(10px)",
-              }}
+            <button
+              onClick={() => navigate("/auth")}
+              className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
             >
-              <button
-                onClick={() => navigate("/auth")}
-                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
+              <X size={24} />
+            </button>
 
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-1">
-                  link your socials.
-                </h2>
-                <p className="text-sm text-white/70">
-                  link where you live online.
-                </p>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-1">
+                link your socials.
+              </h2>
+              <p className="text-sm text-white/70">
+                link where you live online.
+              </p>
+            </div>
+
+            <form className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  LinkedIn
+                </label>
+                <Input
+                  type="url"
+                  placeholder="https://linkedin.com/in/username"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                />
               </div>
 
-              <form className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    LinkedIn
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder="https://linkedin.com/in/username"
-                    value={linkedin}
-                    onChange={(e) => setLinkedin(e.target.value)}
-                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Discord
+                </label>
+                <Input
+                  type="text"
+                  placeholder="username#1234"
+                  value={discord}
+                  onChange={(e) => setDiscord(e.target.value)}
+                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Discord
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="username#1234"
-                    value={discord}
-                    onChange={(e) => setDiscord(e.target.value)}
-                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  GitHub
+                </label>
+                <Input
+                  type="url"
+                  placeholder="https://github.com/username"
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    GitHub
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder="https://github.com/username"
-                    value={github}
-                    onChange={(e) => setGithub(e.target.value)}
-                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Devpost
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder="https://devpost.com/username"
-                    value={devpost}
-                    onChange={(e) => setDevpost(e.target.value)}
-                    className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                  />
-                </div>
-              </form>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Devpost
+                </label>
+                <Input
+                  type="url"
+                  placeholder="https://devpost.com/username"
+                  value={devpost}
+                  onChange={(e) => setDevpost(e.target.value)}
+                  className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                />
+              </div>
+            </form>
           </div>
         </div>
       </div>
