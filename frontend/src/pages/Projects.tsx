@@ -4,16 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { toast } from "sonner";
-import { getAllProjects, getFilteredProjects, applyToProjectBoard, createProject } from "@/lib/api";
+import { getAllProjects, getFilteredProjects, applyToProjectBoard } from "@/lib/api";
 import FeedProjectCard from "@/components/projects/FeedProjectCard";
+import PostProjectDialog from "@/components/projects/PostProjectDialog";
 
 // Options for checkboxes
-const experienceOptions = ['Beginner', 'Intermediate', 'Advanced'];
-const roleOptions = ['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'];
 const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
 
 const Projects = () => {
@@ -30,13 +27,6 @@ const Projects = () => {
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [projectTitle, setProjectTitle] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
-
-  // State for dialog checkboxes (single select for exp/time, multi for roles)
-  const [dialogExperience, setDialogExperience] = useState<string>("");
-  const [dialogRoles, setDialogRoles] = useState<string[]>([]);
-  const [dialogTimeCommitment, setDialogTimeCommitment] = useState<string>("");
 
   // Fetch projects with debounced search
   useEffect(() => {
@@ -115,59 +105,6 @@ const Projects = () => {
     } finally {
       setApplying(null);
     }
-  };
-
-  // Submit handler for creating project
-  const handleSubmit = async () => {
-    if (!projectTitle || !projectDescription) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      const projectData = {
-        title: projectTitle,
-        description: projectDescription,
-        tags: [],
-        looking_for: dialogRoles,
-        time_commitment: dialogTimeCommitment,
-      };
-
-      await createProject(projectData);
-      toast.success("Project posted successfully!");
-      setIsDialogOpen(false);
-      setProjectTitle("");
-      setProjectDescription("");
-      setDialogExperience("");
-      setDialogRoles([]);
-      setDialogTimeCommitment("");
-
-      // Refresh projects list
-      const response = await getAllProjects();
-      setProjects(response.projects || []);
-    } catch (err) {
-      console.error("Error creating project:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to create project";
-      if (errorMessage.includes("No token") || errorMessage.includes("Unauthorized")) {
-        toast.error("Please log in to create a project");
-      } else {
-        toast.error(errorMessage);
-      }
-    }
-  };
-
-  const toggleExperience = (level: string) => {
-    setDialogExperience(prev => prev === level ? "" : level);
-  };
-
-  const toggleRole = (role: string) => {
-    setDialogRoles(prev =>
-      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-    );
-  };
-
-  const toggleTimeCommitment = (time: string) => {
-    setDialogTimeCommitment(prev => prev === time ? "" : time);
   };
 
   // Filter toggle handlers for sidebar
@@ -341,122 +278,10 @@ const Projects = () => {
       </div>
 
       {/* Post Project Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-4xl p-0 gap-0 border-2 font-lexend backdrop-blur-xl"
-          style={{
-            backgroundColor: 'rgba(30, 33, 57, 0.4)',
-            borderColor: '#6789EC'
-          }}
-        >
-          <div className="p-8 space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-3xl font-bold">
-                This is a project kick!
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-semibold">
-                  Project Name
-                </Label>
-                <Input
-                  id="title"
-                  placeholder="Project name"
-                  value={projectTitle}
-                  onChange={(e) => setProjectTitle(e.target.value)}
-                  className="bg-background/50 border-border rounded-xl h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Experience Level</Label>
-                <div className="flex flex-wrap gap-3">
-                  {experienceOptions.map((level) => (
-                    <div key={level} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`dialog-exp-${level}`}
-                        checked={dialogExperience === level}
-                        onCheckedChange={() => toggleExperience(level)}
-                      />
-                      <label
-                        htmlFor={`dialog-exp-${level}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {level}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Role</Label>
-                <div className="flex flex-wrap gap-3">
-                  {roleOptions.map((role) => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`dialog-role-${role}`}
-                        checked={dialogRoles.includes(role)}
-                        onCheckedChange={() => toggleRole(role)}
-                      />
-                      <label
-                        htmlFor={`dialog-role-${role}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {role}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Time Commitment</Label>
-                <div className="flex flex-wrap gap-3">
-                  {timeCommitmentOptions.map((time) => (
-                    <div key={time} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`dialog-time-${time}`}
-                        checked={dialogTimeCommitment === time}
-                        onCheckedChange={() => toggleTimeCommitment(time)}
-                      />
-                      <label
-                        htmlFor={`dialog-time-${time}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {time}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-semibold">
-                  Description of the project you want to build!
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="This is a project that..."
-                  value={projectDescription}
-                  onChange={(e) => setProjectDescription(e.target.value)}
-                  className="bg-background/50 border-border rounded-xl min-h-[150px] resize-none"
-                />
-              </div>
-
-              <Button
-                onClick={handleSubmit}
-                className="w-full h-14 text-base font-medium rounded-xl"
-                style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PostProjectDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   );
 };
