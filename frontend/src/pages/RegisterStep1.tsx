@@ -227,11 +227,11 @@ const RegisterStep1 = () => {
                       <SelectValue placeholder="Select hours per week" />
                     </SelectTrigger>
                     <SelectContent className="border-white/20 z-50" style={{ backgroundColor: 'rgba(30, 33, 57, 0.95)' }}>
-                      <SelectItem value="1-2" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">1-2 hrs/week</SelectItem>
-                      <SelectItem value="3-4" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">3-4 hrs/week</SelectItem>
-                      <SelectItem value="5-6" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">5-6 hrs/week</SelectItem>
-                      <SelectItem value="7-8" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">7-8 hrs/week</SelectItem>
-                      <SelectItem value="8+" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">8+ hrs/week</SelectItem>
+                      <SelectItem value="1-2 hrs/week" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">1-2 hrs/week</SelectItem>
+                      <SelectItem value="3-4 hrs/week" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">3-4 hrs/week</SelectItem>
+                      <SelectItem value="5-6 hrs/week" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">5-6 hrs/week</SelectItem>
+                      <SelectItem value="7-8 hrs/week" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">7-8 hrs/week</SelectItem>
+                      <SelectItem value="8+ hrs/week" className="text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white">8+ hrs/week</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
