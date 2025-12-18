@@ -86,8 +86,8 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
             <DialogContent
                 className="max-w-4xl p-0 gap-0 border-2 font-lexend backdrop-blur-xl"
                 style={{
-                    backgroundColor: 'rgba(30, 33, 57, 0.4)',
-                    borderColor: '#6789EC'
+                    background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+                    border: "1.35px solid rgba(103, 137, 236, 1)"
                 }}
             >
                 <div className="p-8 space-y-6">
@@ -107,11 +107,11 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
                                 placeholder="Project name"
                                 value={projectTitle}
                                 onChange={(e) => setProjectTitle(e.target.value)}
-                                className="bg-background/50 border-border rounded-xl h-12"
+                                className="bg-background/50 border-border rounded-xl h-12 w-2/5"
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <Label className="text-sm font-semibold">Experience Level</Label>
                             <div className="flex flex-wrap gap-3">
                                 {experienceOptions.map((level) => (
@@ -130,7 +130,7 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="space-y-2">
                             <Label className="text-sm font-semibold">Role</Label>

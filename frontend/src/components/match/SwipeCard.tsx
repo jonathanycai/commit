@@ -150,9 +150,8 @@ const SwipeCard = ({
   return (
     <div
       ref={cardRef}
-      className="rounded-[32px] p-[1px] select-none"
+      className="relative rounded-[32px] select-none"
       style={{
-        background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
         transform: `translate(${isAnimatingOut ? targetX : position.x}px, ${isAnimatingOut ? targetY : position.y}px) rotate(${rotation}deg) scale(${scale})`,
         opacity: opacity,
         cursor: isInteractive ? (isDragging ? 'grabbing' : 'grab') : 'default',
@@ -162,10 +161,10 @@ const SwipeCard = ({
       onMouseDown={handleMouseDown}
     >
       <div
-        className="rounded-[32px] p-8"
+        className="relative rounded-[32px] p-8"
         style={{
-          backgroundColor: 'rgba(20, 22, 35, 0.95)',
-          backdropFilter: 'blur(10px)',
+          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+          backdropFilter: 'blur(12px)',
         }}
       >
         {/* Header */}
@@ -225,6 +224,16 @@ const SwipeCard = ({
           </p>
         </div>
       </div>
+      <div
+        className="absolute inset-0 rounded-[32px] pointer-events-none"
+        style={{
+          padding: "1px",
+          background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+          WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+        }}
+      />
     </div>
   );
 };

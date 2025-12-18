@@ -20,16 +20,13 @@ interface FeedProjectCardProps {
 
 const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProjectCardProps) => {
     return (
-        <div
-            className="rounded-3xl p-[1px]"
-            style={{
-                background:
-                    "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
-            }}
-        >
+        <div className="relative rounded-3xl">
             <div
-                className="rounded-3xl p-8"
-                style={{ backgroundColor: "#1E2139" }}
+                className="relative rounded-3xl p-8"
+                style={{
+                    background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+                    backdropFilter: "blur(12px)"
+                }}
             >
                 <div className="flex items-start justify-between gap-4 mb-4">
                     <h3 className="text-2xl font-bold break-words flex-1 min-w-0">{project.title}</h3>
@@ -87,6 +84,16 @@ const FeedProjectCard = ({ project, isApplying, hasApplied, onApply }: FeedProje
                     {project.description}
                 </p>
             </div>
+            <div
+                className="absolute inset-0 rounded-3xl pointer-events-none"
+                style={{
+                    padding: "1px",
+                    background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                }}
+            />
         </div>
     );
 };

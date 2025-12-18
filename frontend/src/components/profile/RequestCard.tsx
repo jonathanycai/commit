@@ -24,17 +24,12 @@ const RequestCard = ({
     return (
         <div>
             <div className="relative">
-                <div
-                    className="rounded-2xl p-[1px]"
-                    style={{
-                        background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))"
-                    }}
-                >
+                <div className="relative rounded-2xl">
                     <div
-                        className="rounded-2xl p-6"
+                        className="relative rounded-2xl p-6"
                         style={{
-                            backgroundColor: 'rgba(20, 22, 35, 0.95)',
-                            backdropFilter: 'blur(10px)',
+                            background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+                            backdropFilter: 'blur(12px)',
                         }}
                     >
                         <div className="space-y-4">
@@ -142,48 +137,58 @@ const RequestCard = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Navigation Arrows */}
+                    {showNavigation && (
+                        <>
+                            <button
+                                onClick={onPrevious}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: '#5B7FFF' }}
+                            >
+                                <ChevronLeft className="w-5 h-5 text-white" />
+                            </button>
+                            <button
+                                onClick={onNext}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: '#5B7FFF' }}
+                            >
+                                <ChevronRight className="w-5 h-5 text-white" />
+                            </button>
+                        </>
+                    )}
+                    <div
+                        className="absolute inset-0 rounded-2xl pointer-events-none"
+                        style={{
+                            padding: "1px",
+                            background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+                            WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                            WebkitMaskComposite: "xor",
+                            maskComposite: "exclude",
+                        }}
+                    />
                 </div>
 
-                {/* Navigation Arrows */}
-                {showNavigation && (
-                    <>
-                        <button
-                            onClick={onPrevious}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: '#5B7FFF' }}
-                        >
-                            <ChevronLeft className="w-5 h-5 text-white" />
-                        </button>
-                        <button
-                            onClick={onNext}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: '#5B7FFF' }}
-                        >
-                            <ChevronRight className="w-5 h-5 text-white" />
-                        </button>
-                    </>
-                )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-4">
-                <Button
-                    onClick={onApprove}
-                    className="flex-1 h-11 rounded-xl font-medium text-sm"
-                    style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
-                >
-                    <Check className="w-4 h-4 mr-2" />
-                    Build together
-                </Button>
-                <Button
-                    onClick={onReject}
-                    variant="outline"
-                    className="flex-1 h-11 rounded-xl font-medium border-2 text-sm"
-                    style={{ borderColor: '#5B7FFF', color: '#5B7FFF' }}
-                >
-                    <X className="w-4 h-4 mr-2" />
-                    Not this time
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-4">
+                    <Button
+                        onClick={onApprove}
+                        className="flex-1 h-11 rounded-xl font-medium text-sm"
+                        style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
+                    >
+                        <Check className="w-4 h-4 mr-2" />
+                        Build together
+                    </Button>
+                    <Button
+                        onClick={onReject}
+                        variant="outline"
+                        className="flex-1 h-11 rounded-xl font-medium border-2 text-sm"
+                        style={{ borderColor: '#5B7FFF', color: '#5B7FFF' }}
+                    >
+                        <X className="w-4 h-4 mr-2" />
+                        Not this time
+                    </Button>
+                </div>
             </div>
         </div>
     );
