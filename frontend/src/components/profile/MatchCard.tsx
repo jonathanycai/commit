@@ -16,17 +16,12 @@ const MatchCard = ({ match }: MatchCardProps) => {
     : [user.role, user.experience, user.time_commitment].filter(Boolean);
 
   return (
-    <div
-      className="rounded-2xl p-[1px]"
-      style={{
-        background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))"
-      }}
-    >
+    <div className="relative rounded-2xl">
       <div
-        className="rounded-2xl p-6"
+        className="relative rounded-2xl p-6"
         style={{
-          backgroundColor: 'rgba(20, 22, 35, 0.95)',
-          backdropFilter: 'blur(10px)',
+          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+          backdropFilter: 'blur(12px)',
         }}
       >
         <div className="space-y-4">
@@ -111,6 +106,16 @@ const MatchCard = ({ match }: MatchCardProps) => {
           </div>
         </div>
       </div>
+      <div
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{
+          padding: "1px",
+          background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+          WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+        }}
+      />
     </div>
   );
 };
