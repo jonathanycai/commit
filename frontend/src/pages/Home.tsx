@@ -43,7 +43,7 @@ const Home = () => {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="pt-24 pb-4 px-4">
+        <section className="pt-40 pb-0 px-4">
           <div className="container mx-auto">
             <div className="max-w-6xl flex items-center justify-between">
               <div className="max-w-2xl space-y-6">
@@ -151,7 +151,7 @@ const Home = () => {
         </section>
 
         {/* Browse Projects Section */}
-        <section className="py-4 px-4">
+        <section className="pt-0 pb-4 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-4xl font-bold">
