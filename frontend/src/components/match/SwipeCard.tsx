@@ -170,7 +170,7 @@ const SwipeCard = ({
         {/* Header */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div className="space-y-3 flex-1 min-w-0">
-            <h2 className="text-4xl font-bold text-white break-words leading-tight">{project.title}</h2>
+            <h2 className="text-4xl font-bold text-white break-words xleading-tight">{project.title}</h2>
             <div className="flex flex-wrap gap-2">
               {project.roles.map((role) => (
                 <span
@@ -219,7 +219,7 @@ const SwipeCard = ({
 
         {/* Description */}
         <div className="space-y-4">
-          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line break-words">
+          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line break-words line-clamp-[9]">
             {project.description}
           </p>
         </div>
