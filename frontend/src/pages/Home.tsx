@@ -90,30 +90,30 @@ const Home = () => {
                 <img
                   src={mascot}
                   alt=""
-                  className="absolute left-[20px] top-[100px] w-[190px] animate-float"
+                  className="absolute left-[20px] top-[100px] w-[240px] animate-float"
                   style={{ animation: 'float 3s ease-in-out infinite' }}
                 />
                 <img
                   src={mascot1}
                   alt=""
-                  className="absolute left-[220px] top-[50px] w-[200px] animate-float"
+                  className="absolute left-[300px] top-[50px] w-[250px] animate-float"
                   style={{ animation: 'float 4s ease-in-out infinite 0.5s' }}
                 />
                 <img
                   src={mascot2}
                   alt=""
-                  className="absolute left-[430px] top-[110px] w-[240px] animate-float"
+                  className="absolute left-[580px] top-[110px] w-[290px] animate-float"
                   style={{ animation: 'float 3.5s ease-in-out infinite 1s' }}
                 />
 
                 {/* Role badges with cursor pointers */}
                 {/* Designer badge */}
-                <div className="absolute left-[20px] top-[290px]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="absolute -top-8 left-4" style={{ transform: 'rotate(75deg)' }}>
+                <div className="absolute left-[20px] top-[340px]">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="absolute -top-10 left-5" style={{ transform: 'rotate(75deg)' }}>
                     <path d="M3 3L7 15L10 12L14 15L3 3Z" fill="#6789EC" stroke="white" strokeWidth="1" />
                   </svg>
                   <div
-                    className="px-3 py-1 rounded text-xs font-medium border-2"
+                    className="px-4 py-1.5 rounded text-sm font-medium border-2"
                     style={{ backgroundColor: '#6789EC', color: '#111118', borderColor: 'white' }}
                   >
                     designer
@@ -121,12 +121,12 @@ const Home = () => {
                 </div>
 
                 {/* Front-end badge */}
-                <div className="absolute left-[230px] top-[40px]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="absolute -bottom-8 left-6" style={{ transform: 'rotate(135deg)' }}>
+                <div className="absolute left-[320px] top-[0px]">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="absolute -bottom-10 left-8" style={{ transform: 'rotate(135deg)' }}>
                     <path d="M3 3L7 15L10 12L14 15L3 3Z" fill="#6789EC" stroke="white" strokeWidth="1" />
                   </svg>
                   <div
-                    className="px-3 py-1 rounded text-xs font-medium border-2"
+                    className="px-4 py-1.5 rounded text-sm font-medium border-2"
                     style={{ backgroundColor: '#6789EC', color: '#111118', borderColor: 'white' }}
                   >
                     front-end
@@ -134,12 +134,12 @@ const Home = () => {
                 </div>
 
                 {/* Idea guy badge */}
-                <div className="absolute left-[490px] top-[290px]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="absolute -top-8 left-6" style={{ transform: 'rotate(-20deg)' }}>
+                <div className="absolute left-[660px] top-[330px]">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="absolute -top-10 left-8" style={{ transform: 'rotate(-20deg)' }}>
                     <path d="M3 3L7 15L10 12L14 15L3 3Z" fill="#A6F4C5" stroke="white" strokeWidth="1" />
                   </svg>
                   <div
-                    className="px-3 py-1 rounded text-xs font-medium border-2"
+                    className="px-4 py-1.5 rounded text-sm font-medium border-2"
                     style={{ backgroundColor: '#A6F4C5', color: '#111118', borderColor: 'white' }}
                   >
                     idea guy
@@ -151,7 +151,7 @@ const Home = () => {
         </section>
 
         {/* Browse Projects Section */}
-        <section className="pt-0 pb-4 px-4">
+        <section className="pt-2 pb-4 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-4xl font-bold">
