@@ -39,17 +39,12 @@ const Welcome = () => {
           </div>
 
           {/* Right side - Card */}
-          <div 
-            className="rounded-2xl p-[2px] max-w-xl w-full"
-            style={{ 
-              background: 'linear-gradient(135deg, #6789EC 0%, #5B7FFF 100%)'
-            }}
-          >
+          <div className="relative rounded-2xl max-w-xl w-full">
             <div 
-              className="rounded-2xl p-12"
+              className="relative rounded-2xl p-12"
               style={{ 
-                backgroundColor: 'rgba(20, 22, 35, 0.95)',
-                backdropFilter: 'blur(10px)'
+                background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+                backdropFilter: 'blur(12px)',
               }}
             >
             <div className="flex justify-center mb-6">
@@ -77,6 +72,16 @@ const Welcome = () => {
               </Button>
             </Link>
             </div>
+            <div
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                style={{
+                    padding: "1px",
+                    background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                }}
+            />
           </div>
         </div>
       </div>
