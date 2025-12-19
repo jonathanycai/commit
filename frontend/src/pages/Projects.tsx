@@ -13,8 +13,20 @@ import PostProjectDialog from "@/components/projects/PostProjectDialog";
 // Options for checkboxes
 const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
 
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  users?: {
+    username: string;
+  };
+  looking_for?: string[];
+  tags?: string[];
+  time_commitment?: string;
+}
+
 const Projects = () => {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null); // track which project is applying
   const [appliedProjects, setAppliedProjects] = useState<Set<string>>(new Set());
@@ -25,8 +37,25 @@ const Projects = () => {
   const [filterExperience, setFilterExperience] = useState<string[]>([]);
   const [filterTime, setFilterTime] = useState<string[]>([]);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  } | null>(null);
+
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterRoles, filterExperience, filterTime]);
 
   // Fetch projects with debounced search
   useEffect(() => {
@@ -46,7 +75,9 @@ const Projects = () => {
           hasFilters,
           filterRoles,
           filterExperience,
-          filterTime
+          filterTime,
+          page: currentPage,
+          limit: itemsPerPage
         });
 
         const data = hasFilters
@@ -55,10 +86,15 @@ const Projects = () => {
             role: filterRoles.length > 0 ? filterRoles : undefined,
             experience: filterExperience.length > 0 ? filterExperience : undefined,
             time_commitment: filterTime.length > 0 ? filterTime : undefined,
+            page: currentPage,
+            limit: itemsPerPage,
           })
-          : await getAllProjects();
+          : await getAllProjects(currentPage, itemsPerPage);
 
         setProjects(data.projects || []);
+        if (data.pagination) {
+          setPagination(data.pagination);
+        }
       } catch (err) {
         console.error("Failed to fetch projects:", err);
         toast.error("Failed to load projects");
@@ -83,7 +119,7 @@ const Projects = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [searchQuery, filterRoles, filterExperience, filterTime]);
+  }, [searchQuery, filterRoles, filterExperience, filterTime, currentPage, itemsPerPage]);
 
   const handleApply = async (projectId: string) => {
     setApplying(projectId);
@@ -243,7 +279,14 @@ const Projects = () => {
             <div className="flex-1 space-y-14 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-white">
-                  Showing {projects.length || 0} results
+                  {pagination ? (
+                    <>
+                      Showing {projects.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
+                      {(currentPage - 1) * itemsPerPage + projects.length} of {pagination.total} results
+                    </>
+                  ) : (
+                    `Showing ${projects.length || 0} results`
+                  )}
                 </p>
                 <Button
                   size="lg"
@@ -259,7 +302,7 @@ const Projects = () => {
                 {loading ? (
                   <p className="text-muted-foreground">Loading projects...</p>
                 ) : projects.length > 0 ? (
-                  projects.map((project: any) => (
+                  projects.map((project) => (
                     <FeedProjectCard
                       key={project.id}
                       project={project}
@@ -272,6 +315,51 @@ const Projects = () => {
                   <p className="text-muted-foreground">No projects found.</p>
                 )}
               </div>
+
+              {/* Pagination Controls */}
+              {pagination && (
+                <div className="space-y-4">
+                  {/* Large Next/Previous Buttons */}
+                  <div className="flex items-center justify-between gap-4">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => {
+                        if (pagination.hasPreviousPage) {
+                          setCurrentPage((prev) => Math.max(1, prev - 1));
+                        }
+                      }}
+                      disabled={!pagination.hasPreviousPage}
+                      className="rounded-xl flex items-center gap-2"
+                    >
+                      <span>←</span>
+                      <span>Previous</span>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => {
+                        if (pagination.hasNextPage) {
+                          setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1));
+                        }
+                      }}
+                      disabled={!pagination.hasNextPage}
+                      className="rounded-xl flex items-center gap-2"
+                    >
+                      <span>Next</span>
+                      <span>→</span>
+                    </Button>
+                  </div>
+                  
+                  {/* Page indicator below buttons */}
+                  <div className="flex justify-center">
+                    <span className="text-sm text-muted-foreground">
+                      Page {pagination.page} of {pagination.totalPages}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

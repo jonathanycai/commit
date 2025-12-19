@@ -303,8 +303,13 @@ export const applyToProject = async (projectId: string) => {
 export const applyToProjectBoard = applyToProject;
 
 // Get all active projects
-export const getAllProjects = async () => {
-  return apiRequest('/projects', {
+export const getAllProjects = async (page?: number, limit?: number) => {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.append("page", page.toString());
+  if (limit !== undefined) params.append("limit", limit.toString());
+  
+  const queryString = params.toString();
+  return apiRequest(`/projects${queryString ? `?${queryString}` : ''}`, {
     method: 'GET',
   });
 };
@@ -314,6 +319,8 @@ export const getFilteredProjects = async (filters: {
   role?: string[];
   experience?: string[];
   time_commitment?: string[];
+  page?: number;
+  limit?: number;
 }) => {
   const params = new URLSearchParams();
 
@@ -322,6 +329,8 @@ export const getFilteredProjects = async (filters: {
   if (filters.experience?.length) params.append("experience", filters.experience.join(","));
   if (filters.time_commitment?.length)
     params.append("time_commitment", filters.time_commitment.join(","));
+  if (filters.page !== undefined) params.append("page", filters.page.toString());
+  if (filters.limit !== undefined) params.append("limit", filters.limit.toString());
 
   return apiRequest(`/projects?${params.toString()}`, { method: "GET" });
 };

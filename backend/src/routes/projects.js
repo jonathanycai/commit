@@ -68,7 +68,14 @@ router.get("/", async (req, res) => {
             experience,
             time_commitment,
             search,
+            page = "1",
+            limit = "5",
         } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20)); // Max 100 items per page
+        const offset = (pageNum - 1) * limitNum;
 
         // Check for optional auth to filter out own/applied projects
         let currentUserId = null;
@@ -86,6 +93,13 @@ router.get("/", async (req, res) => {
             return val.split(',').map(v => v.trim());
         };
 
+        // Build the base query for counting (without joins to be faster)
+        let countQuery = supabase
+            .from("projects")
+            .select("id", { count: 'exact', head: true })
+            .eq("is_active", is_active === "true");
+
+        // Build the main query for data
         let query = supabase
             .from("projects")
             .select(
@@ -116,6 +130,7 @@ router.get("/", async (req, res) => {
         if (currentUserId) {
             // 1. Exclude own projects
             query = query.neq('owner_id', currentUserId);
+            countQuery = countQuery.neq('owner_id', currentUserId);
 
             // 2. Exclude applied projects
             const { data: applications } = await supabase
@@ -126,6 +141,7 @@ router.get("/", async (req, res) => {
             if (applications && applications.length > 0) {
                 const appliedProjectIds = applications.map(app => app.project_id);
                 query = query.not('id', 'in', `(${appliedProjectIds.join(',')})`);
+                countQuery = countQuery.not('id', 'in', `(${appliedProjectIds.join(',')})`);
             }
         }
 
@@ -133,47 +149,77 @@ router.get("/", async (req, res) => {
             query = query.or(
                 `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`
             );
+            countQuery = countQuery.or(
+                `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`
+            );
         }
 
         if (tags) {
             const tagArray = toArray(tags);
-            if (tagArray.length > 0) query = query.overlaps("tags", tagArray);
+            if (tagArray.length > 0) {
+                query = query.overlaps("tags", tagArray);
+                countQuery = countQuery.overlaps("tags", tagArray);
+            }
         }
 
         if (looking_for) {
             const lookingArray = toArray(looking_for);
-            if (lookingArray.length > 0) query = query.overlaps("looking_for", lookingArray);
+            if (lookingArray.length > 0) {
+                query = query.overlaps("looking_for", lookingArray);
+                countQuery = countQuery.overlaps("looking_for", lookingArray);
+            }
         }
 
         if (role) {
             const roleArray = toArray(role);
-            if (roleArray.length > 0) query = query.in("users.role", roleArray);
+            if (roleArray.length > 0) {
+                // Note: Count query can't filter on joined table, so we'll apply this filter only to data query
+                // The count may be slightly inaccurate when role filter is used, but this is a limitation
+                query = query.in("users.role", roleArray);
+            }
         }
 
         if (experience) {
             const expArray = toArray(experience);
-            if (expArray.length > 0) query = query.in("users.experience", expArray);
+            if (expArray.length > 0) {
+                // Note: Count query can't filter on joined table, so we'll apply this filter only to data query
+                query = query.in("users.experience", expArray);
+            }
         }
 
         if (time_commitment) {
             const timeArray = toArray(time_commitment);
             if (timeArray.length > 0) {
-                // Filter by project's time_commitment OR user's time_commitment
-                // Note: Supabase doesn't support OR across different tables easily in one query builder chain
-                // So we'll filter by project's time_commitment primarily, as that's the new standard
                 query = query.in("time_commitment", timeArray);
+                countQuery = countQuery.in("time_commitment", timeArray);
             }
         }
 
-        // Execute query
-        const { data, error } = await query;
+        // Apply pagination to data query
+        query = query.range(offset, offset + limitNum - 1);
+
+        // Execute both queries in parallel
+        const [countResult, dataResult] = await Promise.all([
+            countQuery,
+            query
+        ]);
+
+        const { count, error: countError } = countResult;
+        const { data, error } = dataResult;
 
         if (error) {
             return res.status(500).json({ error: error.message });
         }
 
+        if (countError) {
+            console.error('Count query error:', countError);
+        }
+
+        const total = count || 0;
+        const totalPages = Math.ceil(total / limitNum);
+
         res.json({
-            projects: data,
+            projects: data || [],
             filters: {
                 tags,
                 looking_for,
@@ -182,7 +228,14 @@ router.get("/", async (req, res) => {
                 time_commitment,
                 search,
             },
-            count: data?.length || 0,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                totalPages,
+                hasNextPage: pageNum < totalPages,
+                hasPreviousPage: pageNum > 1,
+            },
         });
     } catch (error) {
         console.error(error);
