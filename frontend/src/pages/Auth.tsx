@@ -54,10 +54,9 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = () => {
-    toast({
-      title: "Google authentication not configured",
-      description: "Please use email and password for now.",
-    });
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    // Redirect to backend OAuth endpoint which will handle the Google OAuth flow
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (

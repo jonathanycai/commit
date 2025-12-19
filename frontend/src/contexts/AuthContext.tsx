@@ -22,6 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  handleOAuthCallback: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -112,6 +113,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const handleOAuthCallback = async (accessToken: string, refreshToken: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Store tokens
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+
+      // Try to fetch user profile
+      try {
+        const response = await apiService.getUserProfile();
+        if (response.profile) {
+          setUser(response.profile);
+        }
+      } catch (profileError: any) {
+        // If profile doesn't exist (new OAuth user), that's okay
+        // They'll need to complete their profile, but we still have valid auth tokens
+        console.log('Profile not found for OAuth user - they will need to complete profile setup');
+        // Set a minimal user object so the user is considered authenticated
+        // The app can check if profile is complete and redirect to profile setup if needed
+        const minimalUser: User = {
+          id: '', // Will be populated when profile is created
+          email: '', // Will be populated when profile is created
+        };
+        setUser(minimalUser);
+      }
+    } catch (error) {
+      console.error('OAuth callback handling failed:', error);
+      // Clear tokens on error
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     // Clear tokens and user
     localStorage.removeItem('access_token');
@@ -125,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     register,
+    handleOAuthCallback,
     logout,
     checkAuth,
   };

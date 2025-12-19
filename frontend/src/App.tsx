@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import CreateProject from "./pages/CreateProject";
 import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Register from "./pages/Register";
 import RegisterStep1 from "./pages/RegisterStep1";
 import RegisterStep2 from "./pages/RegisterStep2";
@@ -31,6 +32,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/step1" element={<RegisterStep1 />} />
             <Route path="/register/step2" element={<RegisterStep2 />} />
