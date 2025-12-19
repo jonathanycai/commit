@@ -22,7 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  handleOAuthCallback: (accessToken: string, refreshToken: string) => Promise<void>;
+  handleOAuthCallback: (accessToken: string, refreshToken: string, userInfo?: { id?: string; email?: string; name?: string }) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -113,9 +113,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const handleOAuthCallback = async (accessToken: string, refreshToken: string) => {
+  const handleOAuthCallback = async (accessToken: string, refreshToken: string, userInfo?: { id?: string; email?: string; name?: string }) => {
     try {
       setIsLoading(true);
+      
+      console.log('handleOAuthCallback called with userInfo:', userInfo);
       
       // Store tokens
       localStorage.setItem('access_token', accessToken);
@@ -125,19 +127,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const response = await apiService.getUserProfile();
         if (response.profile) {
-          setUser(response.profile);
+          // If profile exists but doesn't have username, use OAuth info as fallback
+          const profileUser: User = {
+            ...response.profile,
+            username: response.profile.username || userInfo?.name || userInfo?.email?.split('@')[0] || 'User',
+          };
+          console.log('Setting user from profile:', profileUser);
+          setUser(profileUser);
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (profileError: any) {
-        // If profile doesn't exist (new OAuth user), that's okay
-        // They'll need to complete their profile, but we still have valid auth tokens
-        console.log('Profile not found for OAuth user - they will need to complete profile setup');
-        // Set a minimal user object so the user is considered authenticated
-        // The app can check if profile is complete and redirect to profile setup if needed
-        const minimalUser: User = {
-          id: '', // Will be populated when profile is created
-          email: '', // Will be populated when profile is created
+        // If profile doesn't exist (new OAuth user), use Google account info for display
+        console.log('Profile not found for OAuth user - using Google account info for display', userInfo);
+        // Set user object with Google account info so the name shows correctly
+        const userFromOAuth: User = {
+          id: userInfo?.id || '',
+          email: userInfo?.email || '',
+          username: userInfo?.name || userInfo?.email?.split('@')[0] || 'User',
         };
-        setUser(minimalUser);
+        console.log('Setting user from OAuth:', userFromOAuth);
+        setUser(userFromOAuth);
       }
     } catch (error) {
       console.error('OAuth callback handling failed:', error);
