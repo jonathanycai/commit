@@ -219,7 +219,7 @@ const SwipeCard = ({
 
         {/* Description */}
         <div className="space-y-4">
-          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line break-words line-clamp-[9]">
+          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line break-words line-clamp-[7]">
             {project.description}
           </p>
         </div>
