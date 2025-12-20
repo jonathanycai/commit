@@ -14,82 +14,82 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { login, register, handleOAuthCallback } = useAuth();
+  const { login, register } = useAuth();
 
   // Check if OAuth tokens are in the URL hash (Supabase redirects directly here with implicit/PKCE flow)
   // Only run when hash actually contains OAuth tokens, don't interfere with regular login
-  useEffect(() => {
-    // Only process OAuth if we have a hash with access_token (OAuth indicator)
-    const hash = location.hash;
-    if (!hash || !hash.includes('access_token')) {
-      return; // Early return - no OAuth, let regular login work normally
-    }
+  // useEffect(() => {
+  //   // Only process OAuth if we have a hash with access_token (OAuth indicator)
+  //   const hash = location.hash;
+  //   if (!hash || !hash.includes('access_token')) {
+  //     return; // Early return - no OAuth, let regular login work normally
+  //   }
 
-    const hashParams = new URLSearchParams(hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    const refreshToken = hashParams.get("refresh_token");
-    
-    // Only proceed if we have both tokens
-    if (!accessToken || !refreshToken) {
-      return;
-    }
+  //   const hashParams = new URLSearchParams(hash.substring(1));
+  //   const accessToken = hashParams.get("access_token");
+  //   const refreshToken = hashParams.get("refresh_token");
 
-    // Use a separate loading flag for OAuth to not interfere with form loading
-    setIsLoading(true);
-    
-    // Helper to decode JWT token
-    const decodeJWT = (token: string) => {
-      try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-        return JSON.parse(jsonPayload);
-      } catch (e) {
-        console.error('Failed to decode JWT:', e);
-        return null;
-      }
-    };
+  //   // Only proceed if we have both tokens
+  //   if (!accessToken || !refreshToken) {
+  //     return;
+  //   }
 
-    // Decode token to get user info (name, email, etc. from Google)
-    const tokenData = decodeJWT(accessToken);
-    const userInfo = tokenData ? {
-      id: tokenData.sub || '',
-      email: tokenData.email || '',
-      name: tokenData.user_metadata?.full_name 
-        || tokenData.user_metadata?.name
-        || tokenData.name
-        || tokenData.email?.split('@')[0] 
-        || 'User',
-    } : { id: '', email: '', name: 'User' };
+  //   // Use a separate loading flag for OAuth to not interfere with form loading
+  //   setIsLoading(true);
 
-    // Handle OAuth callback with decoded user info
-    handleOAuthCallback(accessToken, refreshToken, userInfo)
-      .then(() => {
-        setIsLoading(false);
-        toast({
-          title: "Login successful",
-          description: "Welcome!",
-        });
-        // Clear the hash from URL and navigate
-        window.history.replaceState(null, '', window.location.pathname);
-        navigate('/home', { replace: true });
-      })
-      .catch((error) => {
-        console.error('OAuth callback error:', error);
-        setIsLoading(false);
-        toast({
-          title: "Authentication failed",
-          description: "Failed to complete authentication. Please try again.",
-          variant: "destructive",
-        });
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.hash]); // Only depend on hash - OAuth handling only
+  //   // Helper to decode JWT token
+  //   const decodeJWT = (token: string) => {
+  //     try {
+  //       const base64Url = token.split('.')[1];
+  //       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  //       const jsonPayload = decodeURIComponent(
+  //         atob(base64)
+  //           .split('')
+  //           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+  //           .join('')
+  //       );
+  //       return JSON.parse(jsonPayload);
+  //     } catch (e) {
+  //       console.error('Failed to decode JWT:', e);
+  //       return null;
+  //     }
+  //   };
+
+  //   // Decode token to get user info (name, email, etc. from Google)
+  //   const tokenData = decodeJWT(accessToken);
+  //   const userInfo = tokenData ? {
+  //     id: tokenData.sub || '',
+  //     email: tokenData.email || '',
+  //     name: tokenData.user_metadata?.full_name 
+  //       || tokenData.user_metadata?.name
+  //       || tokenData.name
+  //       || tokenData.email?.split('@')[0] 
+  //       || 'User',
+  //   } : { id: '', email: '', name: 'User' };
+
+  //   // Handle OAuth callback with decoded user info
+  //   handleOAuthCallback(accessToken, refreshToken, userInfo)
+  //     .then(() => {
+  //       setIsLoading(false);
+  //       toast({
+  //         title: "Login successful",
+  //         description: "Welcome!",
+  //       });
+  //       // Clear the hash from URL and navigate
+  //       window.history.replaceState(null, '', window.location.pathname);
+  //       navigate('/home', { replace: true });
+  //     })
+  //     .catch((error) => {
+  //       console.error('OAuth callback error:', error);
+  //       setIsLoading(false);
+  //       toast({
+  //         title: "Authentication failed",
+  //         description: "Failed to complete authentication. Please try again.",
+  //         variant: "destructive",
+  //       });
+  //     });
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [location.hash]); // Only depend on hash - OAuth handling only
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,11 +129,11 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-    // Redirect to backend OAuth endpoint which will handle the Google OAuth flow
-    window.location.href = `${apiUrl}/auth/google`;
-  };
+  // const handleGoogleSignIn = () => {
+  //   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  //   // Redirect to backend OAuth endpoint which will handle the Google OAuth flow
+  //   window.location.href = `${apiUrl}/auth/google`;
+  // };
 
   return (
     <div className="min-h-screen">
@@ -225,7 +225,7 @@ const Auth = () => {
                 {isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}
               </Button>
 
-              <Button
+              {/* <Button
                 type="button"
                 onClick={handleGoogleSignIn}
                 variant="outline"
@@ -238,7 +238,7 @@ const Auth = () => {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 Login with Google
-              </Button>
+              </Button> */}
             </form>
 
             <div className="mt-6 text-center">

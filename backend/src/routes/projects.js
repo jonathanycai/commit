@@ -1,5 +1,5 @@
 import express from "express";
-import { supabaseAdmin as supabase } from "../lib/supabase.js";
+import { supabaseAdmin as supabase, createAuthClient } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -81,7 +81,8 @@ router.get("/", async (req, res) => {
         let currentUserId = null;
         const token = req.headers.authorization?.replace('Bearer ', '');
         if (token) {
-            const { data: { user }, error } = await supabase.auth.getUser(token);
+            const authClient = createAuthClient();
+            const { data: { user }, error } = await authClient.auth.getUser(token);
             if (!error && user) {
                 currentUserId = user.id;
             }
