@@ -1,4 +1,5 @@
 import express from "express";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
@@ -7,6 +8,18 @@ import { createClient } from "@supabase/supabase-js";
 
 const router = express.Router();
 
+const getAuthClient = () => {
+    return createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    );
+};
 // Create a Supabase client with anon key for OAuth (needed for OAuth URL generation)
 const supabaseAnon = process.env.SUPABASE_ANON_KEY 
     ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
@@ -21,7 +34,8 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        const authClient = getAuthClient();
+        const { data, error } = await authClient.auth.signUp({
             email,
             password,
         });
@@ -49,7 +63,8 @@ router.post("/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const authClient = getAuthClient();
+        const { data, error } = await authClient.auth.signInWithPassword({
             email,
             password,
         });
