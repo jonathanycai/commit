@@ -188,6 +188,12 @@ class ApiService {
     });
   }
 
+  async deleteProject(projectId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/projects/${projectId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Health check
   async healthCheck(): Promise<{ ok: boolean }> {
     return this.request<{ ok: boolean }>('/health');
@@ -307,7 +313,7 @@ export const getAllProjects = async (page?: number, limit?: number) => {
   const params = new URLSearchParams();
   if (page !== undefined) params.append("page", page.toString());
   if (limit !== undefined) params.append("limit", limit.toString());
-  
+
   const queryString = params.toString();
   return apiRequest(`/projects${queryString ? `?${queryString}` : ''}`, {
     method: 'GET',
@@ -389,6 +395,13 @@ export const approveApplication = async (applicationId: string) => {
 // Reject an application
 export const rejectApplication = async (applicationId: string) => {
   return apiRequest(`/applications/${applicationId}/reject`, {
+    method: 'DELETE',
+  });
+};
+
+// Delete a project
+export const deleteProject = async (projectId: string) => {
+  return apiRequest(`/projects/${projectId}`, {
     method: 'DELETE',
   });
 };

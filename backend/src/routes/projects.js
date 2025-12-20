@@ -330,7 +330,20 @@ router.delete("/:id", requireAuth, async (req, res) => {
             return res.status(403).json({ error: 'Can only delete your own projects' });
         }
 
-        // Delete project (this will cascade delete applications due to foreign key)
+        // Delete related records first to avoid foreign key constraint errors
+        // 1. Delete notifications
+        await supabase
+            .from('notifications')
+            .delete()
+            .eq('project_id', projectId);
+
+        // 2. Delete swipes targeting this project
+        await supabase
+            .from('swipes')
+            .delete()
+            .eq('target_project_id', projectId);
+
+        // 3. Delete project (this will cascade delete applications due to foreign key)
         const { error } = await supabase
             .from('projects')
             .delete()

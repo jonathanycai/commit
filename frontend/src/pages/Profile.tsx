@@ -3,9 +3,9 @@ import Navbar from "@/components/layout/Navbar";
 import MatchCard from "@/components/profile/MatchCard";
 import RequestCard from "@/components/profile/RequestCard";
 import ProjectCard from "@/components/profile/ProjectCard";
-import { getMatches, Match } from "@/lib/api";
+import MyProjectCard from "@/components/profile/MyProjectCard";
 import homepageBg from "@/assets/homepage-bg.svg";
-import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication } from "@/lib/api";
+import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
 import { toast } from "sonner";
 interface Application {
   id: string;
@@ -130,6 +130,25 @@ const Profile = () => {
     }
   }, [activeTab]);
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (!window.confirm("Are you sure you want to delete this project? This will also delete all associated matches and applications.")) {
+      return;
+    }
+
+    try {
+      await deleteProject(projectId);
+      toast.success("Project deleted successfully");
+      // Update local state
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+      // Also refresh matches and requests since they might be affected
+      fetchMatches();
+      const requestsResponse = await getReceivedRequests();
+      setReceivedRequests(requestsResponse.received_requests || []);
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
+    }
+  };
 
 
   return (
@@ -158,7 +177,11 @@ const Profile = () => {
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  {activeTab === "matches" ? "you matched. now what?" : "they saw your idea. now they want in."}
+                  {activeTab === "matches"
+                    ? "you matched. now what?"
+                    : activeTab === "requests"
+                      ? "they saw your idea. now they want in."
+                      : "your ideas. your vision."}
                 </span>
               </h1>
 
@@ -171,6 +194,15 @@ const Profile = () => {
                     }`}
                 >
                   Matches
+                </button>
+                <button
+                  onClick={() => setActiveTab("projects")}
+                  className={`pb-3 transition-colors ${activeTab === "projects"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  My Projects
                 </button>
                 <button
                   onClick={() => setActiveTab("requests")}
@@ -201,6 +233,24 @@ const Profile = () => {
                 ) : (
                   matches.map((match) => (
                     <MatchCard key={match.id} match={match} />
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === "projects" && (
+              <div className="mt-8 space-y-6">
+                {isLoadingProjects ? (
+                  <div className="text-white/60">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="text-white/60">You haven't created any projects yet.</div>
+                ) : (
+                  projects.map((project) => (
+                    <MyProjectCard
+                      key={project.id}
+                      project={project}
+                      onDelete={handleDeleteProject}
+                    />
                   ))
                 )}
               </div>
