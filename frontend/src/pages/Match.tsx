@@ -291,7 +291,7 @@ const Match = () => {
                   <img
                     src={mascotSad}
                     alt=""
-                    className="w-[200px] animate-float"
+                    className="w-[200px] animate-float ml-10"
                     style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}
                   />
                   <Button
