@@ -22,6 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  handleOAuthCallback: (accessToken: string, refreshToken: string, userInfo?: { id?: string; email?: string; name?: string }) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -112,6 +113,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const handleOAuthCallback = async (accessToken: string, refreshToken: string, userInfo?: { id?: string; email?: string; name?: string }) => {
+    try {
+      setIsLoading(true);
+      
+      console.log('handleOAuthCallback called with userInfo:', userInfo);
+      
+      // Store tokens
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+
+      // Try to fetch user profile
+      try {
+        const response = await apiService.getUserProfile();
+        if (response.profile) {
+          // If profile exists but doesn't have username, use OAuth info as fallback
+          const profileUser: User = {
+            ...response.profile,
+            username: response.profile.username || userInfo?.name || userInfo?.email?.split('@')[0] || 'User',
+          };
+          console.log('Setting user from profile:', profileUser);
+          setUser(profileUser);
+        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (profileError: any) {
+        // If profile doesn't exist (new OAuth user), use Google account info for display
+        console.log('Profile not found for OAuth user - using Google account info for display', userInfo);
+        // Set user object with Google account info so the name shows correctly
+        const userFromOAuth: User = {
+          id: userInfo?.id || '',
+          email: userInfo?.email || '',
+          username: userInfo?.name || userInfo?.email?.split('@')[0] || 'User',
+        };
+        console.log('Setting user from OAuth:', userFromOAuth);
+        setUser(userFromOAuth);
+      }
+    } catch (error) {
+      console.error('OAuth callback handling failed:', error);
+      // Clear tokens on error
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     // Clear tokens and user
     localStorage.removeItem('access_token');
@@ -125,6 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     register,
+    handleOAuthCallback,
     logout,
     checkAuth,
   };

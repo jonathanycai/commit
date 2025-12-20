@@ -20,13 +20,27 @@ const Navbar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   useEffect(() => {
+    console.log('Navbar - user object:', user);
+    // If user already has a username (e.g., from OAuth), use it immediately
+    if (user?.username) {
+      console.log('Navbar - using username from user object:', user.username);
+      setUsername(user.username);
+      return;
+    }
+
+    // Otherwise, try to fetch the profile
     const fetchProfile = async () => {
       try {
         const res = await apiService.getUserProfile(); // fetch current user
-        setUsername(res.profile.username || user?.email?.split("@")[0] || "User");
+        const displayName = res.profile.username || user?.username || user?.email?.split("@")[0] || "User";
+        console.log('Navbar - using username from profile:', displayName);
+        setUsername(displayName);
       } catch (err) {
         console.error("Failed to fetch user profile:", err);
-        setUsername(user?.email?.split("@")[0] || "User");
+        // Fallback to email username or "User"
+        const displayName = user?.username || user?.email?.split("@")[0] || "User";
+        console.log('Navbar - using fallback username:', displayName);
+        setUsername(displayName);
       }
     };
 
