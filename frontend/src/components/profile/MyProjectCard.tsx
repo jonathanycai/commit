@@ -76,7 +76,7 @@ const MyProjectCard = ({ project, onDelete }: MyProjectCardProps) => {
                     </div>
 
                     {/* Project description */}
-                    <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
+                    <p className="text-sm text-muted-foreground leading-relaxed break-words line-clamp-2">
                         {project.description}
                     </p>
                 </div>

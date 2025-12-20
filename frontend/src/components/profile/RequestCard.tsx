@@ -173,17 +173,14 @@ const RequestCard = ({
             <div className="flex gap-3 mt-4">
                 <Button
                     onClick={onApprove}
-                    className="flex-1 h-11 rounded-xl font-medium text-sm"
-                    style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
+                    className="flex-1 h-11 rounded-xl font-medium text-sm bg-[#A6F4C5] text-[#111118] border-2 border-transparent hover:border-[#A6F4C5] hover:bg-transparent hover:text-[#A6F4C5] transition-all"
                 >
                     <Check className="w-4 h-4 mr-2" />
                     Build together
                 </Button>
                 <Button
                     onClick={onReject}
-                    variant="outline"
-                    className="flex-1 h-11 rounded-xl font-medium border-2 text-sm"
-                    style={{ borderColor: '#5B7FFF', color: '#5B7FFF' }}
+                    className="flex-1 h-11 rounded-xl font-medium text-sm bg-transparent text-[#5B7FFF] border-2 border-[#5B7FFF] hover:bg-[#5B7FFF] hover:text-[#111118] transition-all"
                 >
                     <X className="w-4 h-4 mr-2" />
                     Not this time
