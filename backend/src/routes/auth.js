@@ -1,10 +1,24 @@
 import express from "express";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validatePasswordStrength, checkPasswordStrength } from "../middleware/passwordValidator.js";
 
 const router = express.Router();
+
+const getAuthClient = () => {
+    return createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    );
+};
 
 // Register new user
 router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
@@ -15,7 +29,8 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        const authClient = getAuthClient();
+        const { data, error } = await authClient.auth.signUp({
             email,
             password,
         });
@@ -43,7 +58,8 @@ router.post("/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const authClient = getAuthClient();
+        const { data, error } = await authClient.auth.signInWithPassword({
             email,
             password,
         });
