@@ -31,10 +31,21 @@ export async function getRandomProject(userId) {
 
         if (swipedError) throw swipedError;
 
-        // Filter out already swiped projects
+        // Get projects the user has already applied to
+        const { data: appliedProjects, error: appliedError } = await supabase
+            .from("applications")
+            .select("project_id")
+            .eq("user_id", userId);
+
+        if (appliedError) throw appliedError;
+
+        // Filter out already swiped or applied projects
         const swipedProjectIds = swipedProjects.map(swipe => swipe.target_project_id);
+        const appliedProjectIds = appliedProjects.map(app => app.project_id);
+
         const availableProjects = projects.filter(project =>
-            !swipedProjectIds.includes(project.id)
+            !swipedProjectIds.includes(project.id) &&
+            !appliedProjectIds.includes(project.id)
         );
 
         // Return random project or null if none available
