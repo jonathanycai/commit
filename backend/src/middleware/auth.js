@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { createAuthClient } from "../lib/supabase.js";
 
 // Auth middleware to verify JWT tokens
 export const requireAuth = async (req, res, next) => {
@@ -8,7 +8,8 @@ export const requireAuth = async (req, res, next) => {
             return res.status(401).json({ error: 'No token provided' });
         }
 
-        const { data: { user }, error } = await supabase.auth.getUser(token);
+        const authClient = createAuthClient();
+        const { data: { user }, error } = await authClient.auth.getUser(token);
         if (error || !user) {
             return res.status(401).json({ error: 'Invalid token' });
         }

@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../lib/supabase.js";
+import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { applicationLimiter } from "../middleware/rateLimiter.js";
 

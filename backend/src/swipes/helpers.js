@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { supabaseAdmin as supabase } from "../lib/supabase.js";
 
 // Helper function to get a random project for user swiping
 export async function getRandomProject(userId) {
@@ -33,7 +33,7 @@ export async function getRandomProject(userId) {
 
         // Filter out already swiped projects
         const swipedProjectIds = swipedProjects.map(swipe => swipe.target_project_id);
-        const availableProjects = projects.filter(project => 
+        const availableProjects = projects.filter(project =>
             !swipedProjectIds.includes(project.id)
         );
 
@@ -68,7 +68,7 @@ export async function getRandomUser(projectId) {
             .from("applications")
             .select("user_id")
             .eq("project_id", projectId);
-            // Remove the status filter to include all applications
+        // Remove the status filter to include all applications
 
         if (applicationsError) throw applicationsError;
 
@@ -101,7 +101,7 @@ export async function getRandomUser(projectId) {
         const swipedUserIds = swipedUsers.map(swipe => swipe.target_user_id);
 
         // Filter out already swiped users and project owner
-        const eligibleUserIds = candidateUserIds.filter(userId => 
+        const eligibleUserIds = candidateUserIds.filter(userId =>
             userId !== project.owner_id && !swipedUserIds.includes(userId)
         );
 
@@ -109,7 +109,7 @@ export async function getRandomUser(projectId) {
 
         // Get random eligible user
         const randomUserId = eligibleUserIds[Math.floor(Math.random() * eligibleUserIds.length)];
-        
+
         const { data: user, error: userError } = await supabase
             .from("users")
             .select("id, username, role, experience, time_commitment, tech_tags")
@@ -200,9 +200,9 @@ export async function detectMatch(swiperId, targetId, targetType) {
 
 // Helper function to return standardized "no more targets" message
 export function noMoreTargetsMessage() {
-    return { 
-        done: true, 
-        message: "No more active targets." 
+    return {
+        done: true,
+        message: "No more active targets."
     };
 }
 
