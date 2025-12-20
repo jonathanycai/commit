@@ -1,9 +1,9 @@
-import { supabase } from "../lib/supabase.js";
-import { 
-    getRandomProject, 
-    getRandomUser, 
-    recordSwipe, 
-    detectMatch, 
+import { supabaseAdmin as supabase } from "../lib/supabase.js";
+import {
+    getRandomProject,
+    getRandomUser,
+    recordSwipe,
+    detectMatch,
     validateUUID,
     createNotification
 } from "./helpers.js";
@@ -12,7 +12,7 @@ import {
 export async function getNextProjectController(req, res) {
     try {
         const { userId } = req.query;
-        
+
         if (!userId) {
             return res.status(400).json({ error: "userId query parameter is required" });
         }
@@ -22,7 +22,7 @@ export async function getNextProjectController(req, res) {
         }
 
         const project = await getRandomProject(userId);
-        
+
         if (!project) {
             return res.json({ message: "No more projects available." });
         }
@@ -42,15 +42,15 @@ export async function recordProjectSwipeController(req, res) {
 
         // Validate required fields
         if (!project_id || !direction || !userId) {
-            return res.status(400).json({ 
-                error: "Missing required fields: project_id, direction, userId" 
+            return res.status(400).json({
+                error: "Missing required fields: project_id, direction, userId"
             });
         }
 
         // Validate direction
         if (!["like", "pass"].includes(direction)) {
-            return res.status(400).json({ 
-                error: "Invalid direction. Must be 'like' or 'pass'" 
+            return res.status(400).json({
+                error: "Invalid direction. Must be 'like' or 'pass'"
             });
         }
 
@@ -72,8 +72,8 @@ export async function recordProjectSwipeController(req, res) {
         }
 
         if (existingSwipe) {
-            return res.status(409).json({ 
-                error: "User has already swiped on this project" 
+            return res.status(409).json({
+                error: "User has already swiped on this project"
             });
         }
 
@@ -144,7 +144,7 @@ export async function recordProjectSwipeController(req, res) {
 export async function getNextUserController(req, res) {
     try {
         const { projectId } = req.query;
-        
+
         if (!projectId) {
             return res.status(400).json({ error: "projectId query parameter is required" });
         }
@@ -154,7 +154,7 @@ export async function getNextUserController(req, res) {
         }
 
         const user = await getRandomUser(projectId);
-        
+
         if (!user) {
             return res.json({ message: "No more users available." });
         }
@@ -174,15 +174,15 @@ export async function recordUserSwipeController(req, res) {
 
         // Validate required fields
         if (!user_id || !project_id || !direction) {
-            return res.status(400).json({ 
-                error: "Missing required fields: user_id, project_id, direction" 
+            return res.status(400).json({
+                error: "Missing required fields: user_id, project_id, direction"
             });
         }
 
         // Validate direction
         if (!["like", "pass"].includes(direction)) {
-            return res.status(400).json({ 
-                error: "Invalid direction. Must be 'like' or 'pass'" 
+            return res.status(400).json({
+                error: "Invalid direction. Must be 'like' or 'pass'"
             });
         }
 
@@ -225,8 +225,8 @@ export async function recordUserSwipeController(req, res) {
         }
 
         if (existingSwipe) {
-            return res.status(409).json({ 
-                error: "Project owner has already swiped on this user" 
+            return res.status(409).json({
+                error: "Project owner has already swiped on this user"
             });
         }
 
@@ -277,7 +277,7 @@ export async function recordUserSwipeController(req, res) {
 export async function getMatchesController(req, res) {
     try {
         const { userId } = req.query;
-        
+
         if (!userId) {
             return res.status(400).json({ error: "userId query parameter is required" });
         }
@@ -350,7 +350,7 @@ export async function getMatchesController(req, res) {
         // Check user->project matches
         for (const userSwipe of userProjectMatches) {
             if (!userSwipe.projects) continue;
-            
+
             // Check if project owner also liked this user
             const { data: ownerSwipe, error: ownerSwipeError } = await supabase
                 .from("swipes")
@@ -376,7 +376,7 @@ export async function getMatchesController(req, res) {
         // Check project->user matches
         for (const projectSwipe of projectUserMatches) {
             if (!projectSwipe.users || !projectSwipe.projects) continue;
-            
+
             // Check if user also liked this project
             const { data: userSwipe, error: userSwipeError } = await supabase
                 .from("swipes")
@@ -401,7 +401,7 @@ export async function getMatchesController(req, res) {
         }
 
         // Remove duplicates and sort by match date
-        const uniqueMatches = matches.filter((match, index, arr) => 
+        const uniqueMatches = matches.filter((match, index, arr) =>
             arr.findIndex(m => m.match_id === match.match_id) === index
         ).sort((a, b) => new Date(b.matched_at) - new Date(a.matched_at));
 
@@ -422,17 +422,17 @@ export async function swipesHealthController(req, res) {
         // Simple query to confirm swipes table responds
         const { data, error } = await supabase.from("swipes").select("count").limit(1);
         if (error) throw error;
-        
-        res.json({ 
-            ok: true, 
-            table: "swipes", 
+
+        res.json({
+            ok: true,
+            table: "swipes",
             status: "healthy",
             timestamp: new Date().toISOString()
         });
     } catch (e) {
-        res.status(500).json({ 
-            ok: false, 
-            table: "swipes", 
+        res.status(500).json({
+            ok: false,
+            table: "swipes",
             error: e.message,
             timestamp: new Date().toISOString()
         });
@@ -444,19 +444,19 @@ export async function swipesHealthController(req, res) {
 export async function clearSwipesController(req, res) {
     try {
         const { userId } = req.params;
-        
+
         const { error } = await supabase
             .from("swipes")
             .delete()
             .eq("swiper_id", userId);
-        
+
         if (error) throw error;
-        
+
         res.json({
             success: true,
             message: `Cleared all swipes for user ${userId}`
         });
-        
+
     } catch (error) {
         console.error("Clear swipes error:", error);
         res.status(500).json({ error: error.message });
@@ -488,7 +488,7 @@ export async function debugUsersController(req, res) {
 export async function createTestApplicationsController(req, res) {
     try {
         const { projectId } = req.params;
-        
+
         // Get some users to create applications
         const { data: users, error: usersError } = await supabase
             .from("users")

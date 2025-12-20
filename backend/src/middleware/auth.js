@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { supabaseAdmin as supabase } from "../lib/supabase.js";
 
 // Auth middleware to verify JWT tokens
 export const requireAuth = async (req, res, next) => {
