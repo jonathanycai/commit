@@ -52,6 +52,11 @@ const RegisterStep2 = () => {
     setProjects([...projects, { name: "", link: "" }]);
   };
 
+  const handleRemoveProject = (index: number) => {
+    const newProjects = projects.filter((_, i) => i !== index);
+    setProjects(newProjects);
+  };
+
   const handleProjectChange = (index: number, field: 'name' | 'link', value: string) => {
     const newProjects = [...projects];
     newProjects[index][field] = value;
@@ -173,35 +178,46 @@ const RegisterStep2 = () => {
             </div>
 
             <form onSubmit={handleNext} className="space-y-5">
-              {projects.map((project, index) => (
-                <div key={index} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Project #{index + 1} Name
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="link"
-                      value={project.name}
-                      onChange={(e) => handleProjectChange(index, 'name', e.target.value)}
-                      className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                    />
-                  </div>
+              <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {projects.map((project, index) => (
+                  <div key={index} className="space-y-4 pb-4 border-b border-white/5 last:border-0 relative">
+                    {index >= 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProject(index)}
+                        className="absolute -top-1 -right-1 text-white/30 hover:text-red-400 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Project #{index + 1} Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Project name"
+                        value={project.name}
+                        onChange={(e) => handleProjectChange(index, 'name', e.target.value)}
+                        className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Project #{index + 1} Link
-                    </label>
-                    <Input
-                      type="url"
-                      placeholder="link"
-                      value={project.link}
-                      onChange={(e) => handleProjectChange(index, 'link', e.target.value)}
-                      className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Project #{index + 1} Link
+                      </label>
+                      <Input
+                        type="url"
+                        placeholder="https://..."
+                        value={project.link}
+                        onChange={(e) => handleProjectChange(index, 'link', e.target.value)}
+                        className="h-11 rounded-lg border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
 
               <Button
                 type="button"

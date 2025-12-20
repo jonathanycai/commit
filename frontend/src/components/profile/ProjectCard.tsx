@@ -11,7 +11,7 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project }: ProjectCardProps) => {
     return (
-        <div className="relative rounded-2xl">
+        <div className="relative rounded-2xl self-start">
             <div
                 className="relative rounded-2xl p-6"
                 style={{

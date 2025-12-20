@@ -48,7 +48,7 @@ create table if not exists swipes (
   id uuid primary key default gen_random_uuid(),          -- unique identifier for each swipe
   swiper_id uuid references users(id) on delete cascade,  -- user performing the swipe
   target_user_id uuid references users(id),               -- optional: user being swiped on (for project owners)
-  target_project_id uuid references projects(id),         -- optional: project being swiped on (for regular users)
+  target_project_id uuid references projects(id) on delete cascade,         -- optional: project being swiped on (for regular users)
   direction text check (direction in ('like','pass')),    -- whether the user liked or passed
   created_at timestamptz default now(),                   -- timestamp of when the swipe happened
   constraint one_target check (                           -- ensures only one of user or project target is used
@@ -63,7 +63,7 @@ create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),          -- unique identifier for each notification
   receiver_id uuid references users(id) on delete cascade,-- who receives the notification
   sender_id uuid references users(id),                    -- who triggered the notification
-  project_id uuid references projects(id),                -- which project this notification relates to
+  project_id uuid references projects(id) on delete cascade,                -- which project this notification relates to
   type text,                                              -- type of notification ("request", "approval", etc.)
   message text,                                           -- message shown in the notification
   is_read boolean default false,                          -- whether the notification has been viewed

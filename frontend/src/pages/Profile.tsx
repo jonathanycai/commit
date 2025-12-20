@@ -3,10 +3,21 @@ import Navbar from "@/components/layout/Navbar";
 import MatchCard from "@/components/profile/MatchCard";
 import RequestCard from "@/components/profile/RequestCard";
 import ProjectCard from "@/components/profile/ProjectCard";
-import { getMatches, Match } from "@/lib/api";
+import MyProjectCard from "@/components/profile/MyProjectCard";
 import homepageBg from "@/assets/homepage-bg.svg";
-import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication } from "@/lib/api";
+import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 interface Application {
   id: string;
   project_id: string;
@@ -54,6 +65,7 @@ const Profile = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   // Fetch user's projects
   useEffect(() => {
@@ -130,6 +142,25 @@ const Profile = () => {
     }
   }, [activeTab]);
 
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      await deleteProject(projectToDelete);
+      toast.success("Project deleted successfully");
+      // Update local state
+      setProjects(prev => prev.filter(p => p.id !== projectToDelete));
+      // Also refresh matches and requests since they might be affected
+      fetchMatches();
+      const requestsResponse = await getReceivedRequests();
+      setReceivedRequests(requestsResponse.received_requests || []);
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
+    } finally {
+      setProjectToDelete(null);
+    }
+  };
 
 
   return (
@@ -158,7 +189,11 @@ const Profile = () => {
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  {activeTab === "matches" ? "you matched. now what?" : "they saw your idea. now they want in."}
+                  {activeTab === "matches"
+                    ? "you matched. now what?"
+                    : activeTab === "requests"
+                      ? "they saw your idea. now they want in."
+                      : "your ideas. your vision."}
                 </span>
               </h1>
 
@@ -171,6 +206,15 @@ const Profile = () => {
                     }`}
                 >
                   Matches
+                </button>
+                <button
+                  onClick={() => setActiveTab("projects")}
+                  className={`pb-3 transition-colors ${activeTab === "projects"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  My Projects
                 </button>
                 <button
                   onClick={() => setActiveTab("requests")}
@@ -201,6 +245,24 @@ const Profile = () => {
                 ) : (
                   matches.map((match) => (
                     <MatchCard key={match.id} match={match} />
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === "projects" && (
+              <div className="mt-8 space-y-6">
+                {isLoadingProjects ? (
+                  <div className="text-white/60">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="text-white/60">You haven't created any projects yet.</div>
+                ) : (
+                  projects.map((project) => (
+                    <MyProjectCard
+                      key={project.id}
+                      project={project}
+                      onDelete={(id) => setProjectToDelete(id)}
+                    />
                   ))
                 )}
               </div>
@@ -280,6 +342,29 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+        <AlertDialogContent className="bg-[#111118] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              This action cannot be undone. This will permanently delete your project
+              and remove all associated matches and applications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              className="bg-red-500 hover:bg-red-600 text-white border-none"
+            >
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

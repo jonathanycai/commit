@@ -179,13 +179,22 @@ const Match = () => {
               {!isLoading && currentProject && (
                 <>
                   <div
-                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#6789EC]/5 bg-[#141623]/50"
-                    style={{ transform: 'translate(-16px, -16px)', zIndex: 0 }}
+                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/5"
+                    style={{
+                      transform: 'translate(-16px, -16px)',
+                      zIndex: 0,
+                      background: 'linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)',
+                    }}
                   />
                   <div
-                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#6789EC]/10 bg-[#141623]/30"
-                    style={{ transform: 'translate(-32px, -32px)', zIndex: -1 }}
+                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/10"
+                    style={{
+                      transform: 'translate(-32px, -32px)',
+                      zIndex: -1,
+                      background: 'linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%);',
+                    }}
                   />
+
                 </>
               )}
 
@@ -291,7 +300,7 @@ const Match = () => {
                   <img
                     src={mascotSad}
                     alt=""
-                    className="w-[200px] animate-float"
+                    className="w-[200px] animate-float ml-10"
                     style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}
                   />
                   <Button
