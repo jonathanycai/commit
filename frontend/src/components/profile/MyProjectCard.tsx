@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 
 interface MyProjectCardProps {
     project: {
@@ -11,9 +11,10 @@ interface MyProjectCardProps {
         time_commitment?: string;
     };
     onDelete?: (id: string) => void;
+    onEdit?: (project: any) => void;
 }
 
-const MyProjectCard = ({ project, onDelete }: MyProjectCardProps) => {
+const MyProjectCard = ({ project, onDelete, onEdit }: MyProjectCardProps) => {
     return (
         <div className="relative rounded-2xl w-full">
             <div
@@ -27,13 +28,22 @@ const MyProjectCard = ({ project, onDelete }: MyProjectCardProps) => {
                     {/* Header: Project name and Delete button */}
                     <div className="flex items-start justify-between gap-4">
                         <h2 className="text-2xl font-bold text-white break-words flex-1 min-w-0">{project.title}</h2>
-                        <button
-                            onClick={() => onDelete?.(project.id)}
-                            className="p-2 rounded-full hover:bg-red-500/20 text-red-400 transition-colors shrink-0"
-                            title="Delete Project"
-                        >
-                            <Trash2 className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                            <button
+                                onClick={() => onEdit?.(project)}
+                                className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                                title="Edit Project"
+                            >
+                                <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={() => onDelete?.(project.id)}
+                                className="p-2 rounded-full hover:bg-red-500/20 text-red-400 transition-colors"
+                                title="Delete Project"
+                            >
+                                <Trash2 className="h-5 w-5" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Role and Tag tags */}

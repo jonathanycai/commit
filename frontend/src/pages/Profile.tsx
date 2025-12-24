@@ -4,6 +4,7 @@ import MatchCard from "@/components/profile/MatchCard";
 import RequestCard from "@/components/profile/RequestCard";
 import ProjectCard from "@/components/profile/ProjectCard";
 import MyProjectCard from "@/components/profile/MyProjectCard";
+import PostProjectDialog from "@/components/projects/PostProjectDialog";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ interface Project {
   description?: string;
   tags?: string[];
   looking_for?: string[];
+  time_commitment?: string;
 }
 
 
@@ -66,22 +68,24 @@ const Profile = () => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const fetchProjects = async () => {
+    try {
+      setIsLoadingProjects(true);
+      const response = await getMyProjects();
+      setProjects(response.my_projects || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load your projects');
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
 
   // Fetch user's projects
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setIsLoadingProjects(true);
-        const response = await getMyProjects();
-        setProjects(response.my_projects || []);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        toast.error('Failed to load your projects');
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    };
-
     fetchProjects();
   }, []);
 
@@ -262,6 +266,10 @@ const Profile = () => {
                       key={project.id}
                       project={project}
                       onDelete={(id) => setProjectToDelete(id)}
+                      onEdit={(project) => {
+                        setProjectToEdit(project);
+                        setIsEditDialogOpen(true);
+                      }}
                     />
                   ))
                 )}
@@ -365,6 +373,13 @@ const Profile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PostProjectDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        project={projectToEdit}
+        onProjectCreated={fetchProjects}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { createProject } from "@/lib/api";
+import { createProject, updateProject } from "@/lib/api";
 
 // Options for checkboxes
 const experienceOptions = ['Beginner', 'Intermediate', 'Advanced'];
@@ -17,14 +17,34 @@ interface PostProjectDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onProjectCreated?: () => void;
+    project?: any; // Optional project for editing
 }
 
-const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProjectDialogProps) => {
+const PostProjectDialog = ({ open, onOpenChange, onProjectCreated, project }: PostProjectDialogProps) => {
     const [projectTitle, setProjectTitle] = useState("");
     const [projectDescription, setProjectDescription] = useState("");
     const [experience, setExperience] = useState<string>("");
     const [roles, setRoles] = useState<string[]>([]);
     const [timeCommitment, setTimeCommitment] = useState<string>("");
+
+    const isEditing = !!project;
+
+    useEffect(() => {
+        if (open) {
+            if (project) {
+                setProjectTitle(project.title || "");
+                setProjectDescription(project.description || "");
+                setRoles(project.looking_for || []);
+                setTimeCommitment(project.time_commitment || "");
+            } else {
+                setProjectTitle("");
+                setProjectDescription("");
+                setExperience("");
+                setRoles([]);
+                setTimeCommitment("");
+            }
+        }
+    }, [open, project]);
 
     const handleSubmit = async () => {
         if (!projectTitle || !projectDescription) {
@@ -39,28 +59,25 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
                 tags: [],
                 looking_for: roles,
                 time_commitment: timeCommitment,
-                // Note: experience level was not being sent in the original code, preserving that behavior
             };
 
-            await createProject(projectData);
-            toast.success("Project posted successfully!");
-
-            // Reset form
-            setProjectTitle("");
-            setProjectDescription("");
-            setExperience("");
-            setRoles([]);
-            setTimeCommitment("");
+            if (isEditing) {
+                await updateProject(project.id, projectData);
+                toast.success("Project updated successfully!");
+            } else {
+                await createProject(projectData);
+                toast.success("Project posted successfully!");
+            }
 
             onOpenChange(false);
             if (onProjectCreated) {
                 onProjectCreated();
             }
         } catch (err) {
-            console.error("Error creating project:", err);
-            const errorMessage = err instanceof Error ? err.message : "Failed to create project";
+            console.error(`Error ${isEditing ? 'updating' : 'creating'} project:`, err);
+            const errorMessage = err instanceof Error ? err.message : `Failed to ${isEditing ? 'update' : 'create'} project`;
             if (errorMessage.includes("No token") || errorMessage.includes("Unauthorized")) {
-                toast.error("Please log in to create a project");
+                toast.error(`Please log in to ${isEditing ? 'update' : 'create'} a project`);
             } else {
                 toast.error(errorMessage);
             }
@@ -93,7 +110,7 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
                 <div className="p-8 space-y-6">
                     <DialogHeader>
                         <DialogTitle className="text-3xl font-bold">
-                            This is a project kick!
+                            {isEditing ? "Edit project" : "This is a project kick!"}
                         </DialogTitle>
                     </DialogHeader>
 
@@ -192,7 +209,7 @@ const PostProjectDialog = ({ open, onOpenChange, onProjectCreated }: PostProject
                             className="w-full h-14 text-base font-medium rounded-xl"
                             style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
                         >
-                            Submit
+                            {isEditing ? "Save Changes" : "Submit"}
                         </Button>
                     </div>
                 </div>

@@ -194,6 +194,13 @@ class ApiService {
     });
   }
 
+  async updateProject(projectId: string, project: Partial<Project>): Promise<ProjectResponse> {
+    return this.request<ProjectResponse>(`/projects/${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(project),
+    });
+  }
+
   // Health check
   async healthCheck(): Promise<{ ok: boolean }> {
     return this.request<{ ok: boolean }>('/health');
@@ -403,6 +410,13 @@ export const rejectApplication = async (applicationId: string) => {
 export const deleteProject = async (projectId: string) => {
   return apiRequest(`/projects/${projectId}`, {
     method: 'DELETE',
+  });
+};
+
+export const updateProject = async (projectId: string, projectData: any) => {
+  return apiRequest(`/projects/${projectId}`, {
+    method: 'PUT',
+    body: JSON.stringify(projectData),
   });
 };
 
