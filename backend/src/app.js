@@ -11,6 +11,10 @@ import swipesRoutes from "./swipes/routes.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
 
 const app = express();
+
+// Trust proxy for rate limiting (required for Render/Vercel)
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 
