@@ -3,8 +3,29 @@ import { supabaseAdmin as supabase } from "../lib/supabase.js";
 // Helper function to get a random project for user swiping
 export async function getRandomProject(userId) {
     try {
-        // Get projects that the user hasn't swiped on yet
-        const { data: projects, error: projectsError } = await supabase
+        // 1. Get projects the user has already swiped on
+        const { data: swipedProjects, error: swipedError } = await supabase
+            .from("swipes")
+            .select("target_project_id")
+            .eq("swiper_id", userId)
+            .not("target_project_id", "is", null);
+
+        if (swipedError) throw swipedError;
+
+        // 2. Get projects the user has already applied to
+        const { data: appliedProjects, error: appliedError } = await supabase
+            .from("applications")
+            .select("project_id")
+            .eq("user_id", userId);
+
+        if (appliedError) throw appliedError;
+
+        const swipedProjectIds = swipedProjects.map(swipe => swipe.target_project_id);
+        const appliedProjectIds = appliedProjects.map(app => app.project_id);
+        const excludedProjectIds = [...new Set([...swipedProjectIds, ...appliedProjectIds])];
+
+        // 3. Build the query for available projects
+        let query = supabase
             .from("projects")
             .select(`
                 id,
@@ -18,38 +39,19 @@ export async function getRandomProject(userId) {
                 users!projects_owner_id_fkey(username, role, experience)
             `)
             .eq("is_active", true)
-            .not("owner_id", "eq", userId); // Don't show user's own projects
+            .neq("owner_id", userId); // Don't show user's own projects
+
+        // 4. Exclude swiped and applied projects
+        if (excludedProjectIds.length > 0) {
+            query = query.not("id", "in", `(${excludedProjectIds.join(",")})`);
+        }
+
+        const { data: availableProjects, error: projectsError } = await query;
 
         if (projectsError) throw projectsError;
 
-        // Get projects the user has already swiped on
-        const { data: swipedProjects, error: swipedError } = await supabase
-            .from("swipes")
-            .select("target_project_id")
-            .eq("swiper_id", userId)
-            .not("target_project_id", "is", null);
-
-        if (swipedError) throw swipedError;
-
-        // Get projects the user has already applied to
-        const { data: appliedProjects, error: appliedError } = await supabase
-            .from("applications")
-            .select("project_id")
-            .eq("user_id", userId);
-
-        if (appliedError) throw appliedError;
-
-        // Filter out already swiped or applied projects
-        const swipedProjectIds = swipedProjects.map(swipe => swipe.target_project_id);
-        const appliedProjectIds = appliedProjects.map(app => app.project_id);
-
-        const availableProjects = projects.filter(project =>
-            !swipedProjectIds.includes(project.id) &&
-            !appliedProjectIds.includes(project.id)
-        );
-
         // Return random project or null if none available
-        if (availableProjects.length === 0) {
+        if (!availableProjects || availableProjects.length === 0) {
             return null;
         }
 

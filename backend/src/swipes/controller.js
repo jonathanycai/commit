@@ -98,6 +98,22 @@ export async function recordProjectSwipeController(req, res) {
             return res.status(400).json({ error: "Cannot swipe on your own project" });
         }
 
+        // Check if user already applied to this project
+        const { data: existingApplication, error: appError } = await supabase
+            .from("applications")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("project_id", project_id)
+            .single();
+
+        if (appError && appError.code !== "PGRST116") {
+            throw appError;
+        }
+
+        if (existingApplication) {
+            return res.status(400).json({ error: "You have already applied to this project" });
+        }
+
         // Record the swipe
         const newSwipe = await recordSwipe(userId, project_id, direction, 'project');
 
