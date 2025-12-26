@@ -6,21 +6,21 @@ import homepageBg from "@/assets/homepage-bg.svg";
 const Welcome = () => {
   return (
     <div className="min-h-screen">
-      <div 
+      <div
         className="fixed inset-0 z-0"
-        style={{ 
+        style={{
           backgroundImage: `url(${homepageBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       />
-      
-      <div className="relative z-10 min-h-screen flex items-center px-4" style={{ paddingRight: '103px' }}>
-        <div className="w-full flex items-center justify-between gap-16 pl-24">
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-6xl flex items-center justify-between gap-16 pl-24">
           {/* Left side - Logo */}
           <div className="flex-1">
             <div className="flex flex-col gap-1">
-              <h1 
+              <h1
                 className="text-7xl font-bold bg-clip-text"
                 style={{
                   backgroundImage: 'linear-gradient(90deg, #9D9CFF -16.21%, #FAFAFA 100%)',
@@ -40,47 +40,47 @@ const Welcome = () => {
 
           {/* Right side - Card */}
           <div className="relative rounded-2xl max-w-xl w-full">
-            <div 
+            <div
               className="relative rounded-2xl p-12"
-              style={{ 
+              style={{
                 background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
                 backdropFilter: 'blur(12px)',
               }}
             >
-            <div className="flex justify-center mb-6">
-              <img 
-                src={mascotGroup} 
-                alt="Mascots" 
-                className="w-64 h-auto"
-              />
-            </div>
+              <div className="flex justify-center mb-6">
+                <img
+                  src={mascotGroup}
+                  alt="Mascots"
+                  className="w-64 h-auto"
+                />
+              </div>
 
-            <h2 className="text-2xl font-bold text-white text-left mb-4">
-              No more waiting for the "right" team.
-            </h2>
+              <h2 className="text-2xl font-bold text-white text-left mb-4">
+                No more waiting for the "right" team.
+              </h2>
 
-            <p className="text-base text-white/70 text-left mb-8">
-              No more half-finished repos. Create an account to find builders who commit — and projects worth committing to.
-            </p>
+              <p className="text-base text-white/70 text-left mb-8">
+                No more half-finished repos. Create an account to find builders who commit — and projects worth committing to.
+              </p>
 
-            <Link to="/auth">
-              <Button 
-                className="w-full h-12 rounded-xl font-medium text-base"
-                style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
-              >
-                Let's start building!
-              </Button>
-            </Link>
+              <Link to="/auth">
+                <Button
+                  className="w-full h-12 rounded-xl font-medium text-base"
+                  style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
+                >
+                  Let's start building!
+                </Button>
+              </Link>
             </div>
             <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                    padding: "1px",
-                    background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
-                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                    WebkitMaskComposite: "xor",
-                    maskComposite: "exclude",
-                }}
+              className="absolute inset-0 rounded-2xl pointer-events-none"
+              style={{
+                padding: "1px",
+                background: "linear-gradient(135deg, rgba(103, 137, 236, 1), rgba(93, 224, 187, 1))",
+                WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                WebkitMaskComposite: "xor",
+                maskComposite: "exclude",
+              }}
             />
           </div>
         </div>

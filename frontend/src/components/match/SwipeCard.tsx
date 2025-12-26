@@ -38,23 +38,28 @@ const SwipeCard = ({
     setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
     // Prevent text selection
     document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'grabbing';
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
-    e.preventDefault();
-    const newX = e.clientX - startPos.x;
-    const newY = e.clientY - startPos.y;
-    setPosition({ x: newX, y: newY });
-  };
 
-  const handleMouseUp = () => {
+    // Use requestAnimationFrame for smoother updates
+    window.requestAnimationFrame(() => {
+      const newX = e.clientX - startPos.x;
+      const newY = e.clientY - startPos.y;
+      setPosition({ x: newX, y: newY });
+    });
+  }, [isDragging, startPos]);
+
+  const handleMouseUp = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
     document.body.style.userSelect = '';
+    document.body.style.cursor = '';
 
     // Only check if dragged to the right side (positive X)
-    if (position.x > 200) {
+    if (position.x > 150) { // Reduced threshold for better feel
       // Get the card's final position on screen
       const cardRect = cardRef.current?.getBoundingClientRect();
       const cardCenterX = cardRect ? cardRect.left + cardRect.width / 2 : 0;
@@ -78,7 +83,7 @@ const SwipeCard = ({
           setIsAnimatingOut(false);
           setAnimateToButton(null);
           swipeHandled.current = false;
-        }, 500);
+        }, 600);
       } else {
         // Left of OR = Down to commit (like)
         setAnimateToButton('left');
@@ -88,24 +93,24 @@ const SwipeCard = ({
           setIsAnimatingOut(false);
           setAnimateToButton(null);
           swipeHandled.current = false;
-        }, 500);
+        }, 600);
       }
     } else {
       // Snap back to center if not dragged far enough
       setPosition({ x: 0, y: 0 });
     }
-  };
+  }, [isDragging, position, onSwipeLeft, onSwipeRight]);
 
   useEffect(() => {
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
       window.addEventListener('mouseup', handleMouseUp);
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, position, startPos]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // Keyboard controls
   useEffect(() => {
@@ -126,25 +131,19 @@ const SwipeCard = ({
   }, [isInteractive, onSwipeLeft, onSwipeRight]);
 
   const distance = Math.sqrt(position.x ** 2 + position.y ** 2);
-  const scale = isAnimatingOut ? 0 : Math.max(0.5, 1 - distance / 800);
-  const rotation = position.x / 30;
+  const scale = isAnimatingOut ? 0.8 : Math.max(0.5, 1 - distance / 800);
+  const rotation = position.x / 20;
   const opacity = isAnimatingOut ? 0 : Math.max(0.3, 1 - distance / 400);
 
-  // Calculate target position for animation
+  // Calculate target position for animation (fly off screen)
   let targetX = position.x;
   let targetY = position.y;
 
-  if (isAnimatingOut && animateToButton) {
-    const screenWidth = window.innerWidth;
-    if (animateToButton === 'left') {
-      // Animate to left mascot button position
-      targetX = screenWidth * 0.65 - (cardRef.current?.offsetLeft || 0);
-      targetY = 400;
-    } else {
-      // Animate to right mascot button position
-      targetX = screenWidth * 0.85 - (cardRef.current?.offsetLeft || 0);
-      targetY = 400;
-    }
+  if (isAnimatingOut) {
+    // Fly off screen in the direction of the swipe
+    const flyDirection = position.x > 0 ? 1 : -1;
+    targetX = flyDirection * window.innerWidth;
+    targetY = position.y; // Maintain vertical position
   }
 
   return (
@@ -152,11 +151,15 @@ const SwipeCard = ({
       ref={cardRef}
       className="relative rounded-[32px] select-none"
       style={{
-        transform: `translate(${isAnimatingOut ? targetX : position.x}px, ${isAnimatingOut ? targetY : position.y}px) rotate(${rotation}deg) scale(${scale})`,
+        transform: `translate3d(${isAnimatingOut ? targetX : position.x}px, ${isAnimatingOut ? targetY : position.y}px, 0) rotate(${rotation}deg) scale(${scale})`,
         opacity: opacity,
         cursor: isInteractive ? (isDragging ? 'grabbing' : 'grab') : 'default',
-        transition: isAnimatingOut ? 'all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1)' : (isDragging ? 'none' : 'all 0.3s ease-out'),
+        transition: isAnimatingOut
+          ? 'all 0.6s cubic-bezier(0.45, 0, 0.55, 1)'
+          : (isDragging ? 'none' : 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'),
         pointerEvents: isInteractive && !isAnimatingOut ? 'auto' : 'none',
+        willChange: 'transform, opacity',
+        touchAction: 'none',
       }}
       onMouseDown={handleMouseDown}
     >
