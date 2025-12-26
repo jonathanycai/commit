@@ -90,6 +90,37 @@ router.post("/", requireAuth, applicationLimiter, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
+        // Record as a "like" swipe as well so it's consistent with the swipe deck
+        try {
+            await supabase
+                .from("swipes")
+                .insert({
+                    swiper_id: user_id,
+                    target_project_id: project_id,
+                    direction: "like"
+                });
+        } catch (swipeErr) {
+            // Ignore if swipe already exists or fails
+            console.error("Error recording swipe from application:", swipeErr);
+        }
+
+        // Create notification for project owner
+        try {
+            await supabase
+                .from("notifications")
+                .insert({
+                    receiver_id: project.owner_id,
+                    sender_id: user_id,
+                    project_id: project_id,
+                    type: "project_liked",
+                    message: `${data.users?.username || "Someone"} is down to commit to your project: ${project.title}`,
+                    is_read: false
+                });
+        } catch (notifErr) {
+            console.error("Error sending notification:", notifErr);
+            // Don't fail the application if notification fails
+        }
+
         res.json({
             message: "Application sent successfully",
             application: data,

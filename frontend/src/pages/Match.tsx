@@ -85,6 +85,9 @@ const Match = () => {
         description: project.description || 'No description available.',
       };
 
+      // Small delay to allow SwipeCard animation to finish if this was triggered by a swipe
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       setCurrentProject(transformedProject);
       setIsLoading(false);
     } catch (error) {
