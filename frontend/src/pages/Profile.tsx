@@ -201,7 +201,7 @@ const Profile = () => {
                 </span>
               </h1>
 
-              <div className="flex gap-6 text-sm font-medium border-b border-border">
+              <div className="flex gap-6 text-sm font-medium border-b border-border overflow-x-auto no-scrollbar">
                 <button
                   onClick={() => setActiveTab("matches")}
                   className={`pb-3 transition-colors ${activeTab === "matches"

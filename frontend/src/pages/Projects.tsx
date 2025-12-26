@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Filter } from "lucide-react";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { toast } from "sonner";
 import { getAllProjects, getFilteredProjects, applyToProjectBoard } from "@/lib/api";
@@ -24,6 +26,97 @@ interface Project {
   tags?: string[];
   time_commitment?: string;
 }
+
+interface FilterContentProps {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  filterRoles: string[];
+  toggleRoleFilter: (role: string) => void;
+  filterTime: string[];
+  toggleTimeFilter: (time: string) => void;
+}
+
+const FilterContent = ({
+  searchQuery,
+  setSearchQuery,
+  filterRoles,
+  toggleRoleFilter,
+  filterTime,
+  toggleTimeFilter,
+}: FilterContentProps) => (
+  <div className="space-y-8">
+    <div>
+      <h1 className="text-3xl font-bold mb-2" style={{ whiteSpace: "nowrap" }}>
+        your next commit
+      </h1>
+      <h2
+        className="text-3xl font-bold bg-gradient-hero bg-clip-text"
+        style={{
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+        }}
+      >
+        starts here.
+      </h2>
+    </div>
+
+    {/* Search */}
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">Search by Project Name</Label>
+      <Input
+        placeholder="Project name"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="bg-background/50 border-border rounded-xl"
+      />
+    </div>
+
+    {/* Roles */}
+    <div className="space-y-4">
+      <Label className="text-sm font-semibold">Role</Label>
+      <div className="space-y-3">
+        {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
+          <div key={role} className="flex items-center space-x-2">
+            <Checkbox
+              id={role}
+              checked={filterRoles.includes(role)}
+              onCheckedChange={() => toggleRoleFilter(role)}
+            />
+            <label
+              htmlFor={role}
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {role}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Time */}
+    <div className="space-y-4">
+      <Label className="text-sm font-semibold">Time Commitment</Label>
+      <div className="space-y-3">
+        {timeCommitmentOptions.map((time) => (
+          <div key={time} className="flex items-center space-x-2">
+            <Checkbox
+              id={time}
+              checked={filterTime.includes(time)}
+              onCheckedChange={() => toggleTimeFilter(time)}
+            />
+            <label
+              htmlFor={time}
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {time}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -177,106 +270,46 @@ const Projects = () => {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="container mx-auto px-6 pt-32 pb-12">
-          <div className="flex gap-8">
-            {/* Sidebar Filters */}
-            <div className="w-80 space-y-8">
-              <div>
-                <h1 className="text-3xl font-bold mb-2" style={{ whiteSpace: "nowrap" }}>
-                  your next commit
-                </h1>
-                <h2
-                  className="text-3xl font-bold bg-gradient-hero bg-clip-text"
-                  style={{
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  starts here.
-                </h2>
-              </div>
+        <div className="container mx-auto px-6 pt-24 md:pt-32 pb-12">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden w-full">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full gap-2 h-12 rounded-xl border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                    <Filter className="h-4 w-4" />
+                    Filters & Search
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto bg-background border-r border-border">
+                  <div className="py-6">
+                    <FilterContent
+                      searchQuery={searchQuery}
+                      setSearchQuery={setSearchQuery}
+                      filterRoles={filterRoles}
+                      toggleRoleFilter={toggleRoleFilter}
+                      filterTime={filterTime}
+                      toggleTimeFilter={toggleTimeFilter}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
 
-              {/* Search - First */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Search by Project Name</Label>
-                <Input
-                  placeholder="Project name"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-background/50 border-border rounded-xl"
-                />
-              </div>
-
-              {/* Experience */}
-              {/* <div className="space-y-4">
-                <Label className="text-sm font-semibold">Experience Level</Label>
-                <div className="space-y-3">
-                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-                    <div key={level} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={level}
-                        checked={filterExperience.includes(level)}
-                        onCheckedChange={() => toggleExperienceFilter(level)}
-                      />
-                      <label
-                        htmlFor={level}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {level}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Roles */}
-              <div className="space-y-4">
-                <Label className="text-sm font-semibold">Role</Label>
-                <div className="space-y-3">
-                  {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={role}
-                        checked={filterRoles.includes(role)}
-                        onCheckedChange={() => toggleRoleFilter(role)}
-                      />
-                      <label
-                        htmlFor={role}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {role}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time */}
-              <div className="space-y-4">
-                <Label className="text-sm font-semibold">Time Commitment</Label>
-                <div className="space-y-3">
-                  {timeCommitmentOptions.map((time) => (
-                    <div key={time} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={time}
-                        checked={filterTime.includes(time)}
-                        onCheckedChange={() => toggleTimeFilter(time)}
-                      />
-                      <label
-                        htmlFor={time}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {time}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Desktop Sidebar Filters */}
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <FilterContent
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filterRoles={filterRoles}
+                toggleRoleFilter={toggleRoleFilter}
+                filterTime={filterTime}
+                toggleTimeFilter={toggleTimeFilter}
+              />
             </div>
 
             {/* Main content */}
-            <div className="flex-1 space-y-14 min-w-0">
+            <div className="flex-1 space-y-8 lg:space-y-14 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-white">
                   {pagination ? (
@@ -335,7 +368,7 @@ const Projects = () => {
                       <span>←</span>
                       <span>Previous</span>
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="lg"
@@ -351,7 +384,7 @@ const Projects = () => {
                       <span>→</span>
                     </Button>
                   </div>
-                  
+
                   {/* Page indicator below buttons */}
                   <div className="flex justify-center">
                     <span className="text-sm text-muted-foreground">

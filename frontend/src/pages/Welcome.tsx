@@ -16,18 +16,18 @@ const Welcome = () => {
       />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-6xl flex items-center justify-between gap-16 pl-24">
+        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8 md:gap-16 pl-0 md:pl-24">
           {/* Left side - Logo */}
-          <div className="flex-1">
+          <div className="flex-1 text-center md:text-left mb-8 md:mb-0">
             <div className="flex flex-col gap-1">
               <h1
-                className="text-7xl font-bold bg-clip-text"
+                className="text-5xl md:text-7xl font-bold bg-clip-text"
                 style={{
                   backgroundImage: 'linear-gradient(90deg, #9D9CFF -16.21%, #FAFAFA 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  fontSize: '56px'
+                  fontSize: 'clamp(40px, 8vw, 56px)'
                 }}
               >
                 commit
