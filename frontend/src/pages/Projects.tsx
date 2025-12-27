@@ -4,11 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Filter } from "lucide-react";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { toast } from "sonner";
 import { getAllProjects, getFilteredProjects, applyToProjectBoard } from "@/lib/api";
 import FeedProjectCard from "@/components/projects/FeedProjectCard";
 import PostProjectDialog from "@/components/projects/PostProjectDialog";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Options for checkboxes
 const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
@@ -25,14 +28,106 @@ interface Project {
   time_commitment?: string;
 }
 
-const Projects = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState<string | null>(null); // track which project is applying
-  const [appliedProjects, setAppliedProjects] = useState<Set<string>>(new Set());
+interface FilterContentProps {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  filterRoles: string[];
+  toggleRoleFilter: (role: string) => void;
+  filterTime: string[];
+  toggleTimeFilter: (time: string) => void;
+}
 
-  // Filters + search (for sidebar - multi-select)
+const FilterContent = ({
+  searchQuery,
+  setSearchQuery,
+  filterRoles,
+  toggleRoleFilter,
+  filterTime,
+  toggleTimeFilter,
+}: FilterContentProps) => (
+  <div className="space-y-8">
+    <div>
+      <h1 className="text-3xl font-bold mb-2" style={{ whiteSpace: "nowrap" }}>
+        your next commit
+      </h1>
+      <h2
+        className="text-3xl font-bold bg-gradient-hero bg-clip-text"
+        style={{
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+        }}
+      >
+        starts here.
+      </h2>
+    </div>
+
+    {/* Search */}
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">Search by Project Name</Label>
+      <Input
+        placeholder="Project name"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="bg-background/50 border-border rounded-xl"
+      />
+    </div>
+
+    {/* Roles */}
+    <div className="space-y-4">
+      <Label className="text-sm font-semibold">Role</Label>
+      <div className="space-y-3">
+        {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
+          <div key={role} className="flex items-center space-x-2">
+            <Checkbox
+              id={role}
+              checked={filterRoles.includes(role)}
+              onCheckedChange={() => toggleRoleFilter(role)}
+            />
+            <label
+              htmlFor={role}
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {role}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Time */}
+    <div className="space-y-4">
+      <Label className="text-sm font-semibold">Time Commitment</Label>
+      <div className="space-y-3">
+        {timeCommitmentOptions.map((time) => (
+          <div key={time} className="flex items-center space-x-2">
+            <Checkbox
+              id={time}
+              checked={filterTime.includes(time)}
+              onCheckedChange={() => toggleTimeFilter(time)}
+            />
+            <label
+              htmlFor={time}
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {time}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const Projects = () => {
+  // State for UI interactions
+  const [applying, setApplying] = useState<string | null>(null);
+  const [appliedProjects, setAppliedProjects] = useState<Set<string>>(new Set());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRoles, setFilterRoles] = useState<string[]>([]);
   const [filterExperience, setFilterExperience] = useState<string[]>([]);
   const [filterTime, setFilterTime] = useState<string[]>([]);
@@ -40,86 +135,70 @@ const Projects = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  } | null>(null);
 
-  // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterRoles, filterExperience, filterTime]);
+  }, [debouncedSearch, filterRoles, filterExperience, filterTime]);
 
-  // Fetch projects with debounced search
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  // React Query Implementation
+  const {
+    data,
+    isLoading,
+    isError
+  } = useQuery({
+    queryKey: ['projects', {
+      search: debouncedSearch,
+      role: filterRoles,
+      experience: filterExperience,
+      time: filterTime,
+      page: currentPage,
+      limit: itemsPerPage
+    }],
+    queryFn: async () => {
+      const hasFilters =
+        debouncedSearch.trim() ||
+        filterRoles.length > 0 ||
+        filterExperience.length > 0 ||
+        filterTime.length > 0;
 
-    const fetchProjects = async () => {
-      setLoading(true);
-      try {
-        const hasFilters =
-          searchQuery.trim() ||
-          filterRoles.length > 0 ||
-          filterExperience.length > 0 ||
-          filterTime.length > 0;
+      console.log('Fetching with filters:', {
+        search: debouncedSearch,
+        hasFilters,
+        filterRoles,
+        filterExperience,
+        filterTime,
+        page: currentPage,
+        limit: itemsPerPage
+      });
 
-        console.log('Fetching with filters:', {
-          search: searchQuery,
-          hasFilters,
-          filterRoles,
-          filterExperience,
-          filterTime,
+      if (hasFilters) {
+        return getFilteredProjects({
+          search: debouncedSearch.trim() || undefined,
+          role: filterRoles.length > 0 ? filterRoles : undefined,
+          experience: filterExperience.length > 0 ? filterExperience : undefined,
+          time_commitment: filterTime.length > 0 ? filterTime : undefined,
           page: currentPage,
-          limit: itemsPerPage
+          limit: itemsPerPage,
         });
-
-        const data = hasFilters
-          ? await getFilteredProjects({
-            search: searchQuery.trim() || undefined, // Pass undefined for empty strings
-            role: filterRoles.length > 0 ? filterRoles : undefined,
-            experience: filterExperience.length > 0 ? filterExperience : undefined,
-            time_commitment: filterTime.length > 0 ? filterTime : undefined,
-            page: currentPage,
-            limit: itemsPerPage,
-          })
-          : await getAllProjects(currentPage, itemsPerPage);
-
-        setProjects(data.projects || []);
-        if (data.pagination) {
-          setPagination(data.pagination);
-        }
-      } catch (err) {
-        console.error("Failed to fetch projects:", err);
-        toast.error("Failed to load projects");
-      } finally {
-        setLoading(false);
+      } else {
+        return getAllProjects(currentPage, itemsPerPage);
       }
-    };
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-    // Debounce the search query to avoid too many API calls
-    // Filter changes (not search) happen immediately
-    if (searchQuery.trim()) {
-      timeoutId = setTimeout(() => {
-        fetchProjects();
-      }, 500); // 500ms debounce for search
-    } else {
-      // No search query, fetch immediately (for filters)
-      fetchProjects();
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [searchQuery, filterRoles, filterExperience, filterTime, currentPage, itemsPerPage]);
+  const projects = data?.projects || [];
+  const pagination = data?.pagination || null;
 
   const handleApply = async (projectId: string) => {
     setApplying(projectId);
@@ -177,106 +256,46 @@ const Projects = () => {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="container mx-auto px-6 pt-32 pb-12">
-          <div className="flex gap-8">
-            {/* Sidebar Filters */}
-            <div className="w-80 space-y-8">
-              <div>
-                <h1 className="text-3xl font-bold mb-2" style={{ whiteSpace: "nowrap" }}>
-                  your next commit
-                </h1>
-                <h2
-                  className="text-3xl font-bold bg-gradient-hero bg-clip-text"
-                  style={{
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  starts here.
-                </h2>
-              </div>
+        <div className="container mx-auto px-6 pt-24 md:pt-32 pb-12">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden w-full">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full gap-2 h-12 rounded-xl border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                    <Filter className="h-4 w-4" />
+                    Filters & Search
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto bg-background border-r border-border">
+                  <div className="py-6">
+                    <FilterContent
+                      searchQuery={searchQuery}
+                      setSearchQuery={setSearchQuery}
+                      filterRoles={filterRoles}
+                      toggleRoleFilter={toggleRoleFilter}
+                      filterTime={filterTime}
+                      toggleTimeFilter={toggleTimeFilter}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
 
-              {/* Search - First */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Search by Project Name</Label>
-                <Input
-                  placeholder="Project name"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-background/50 border-border rounded-xl"
-                />
-              </div>
-
-              {/* Experience */}
-              {/* <div className="space-y-4">
-                <Label className="text-sm font-semibold">Experience Level</Label>
-                <div className="space-y-3">
-                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-                    <div key={level} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={level}
-                        checked={filterExperience.includes(level)}
-                        onCheckedChange={() => toggleExperienceFilter(level)}
-                      />
-                      <label
-                        htmlFor={level}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {level}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Roles */}
-              <div className="space-y-4">
-                <Label className="text-sm font-semibold">Role</Label>
-                <div className="space-y-3">
-                  {['Front-End', 'Back-End', 'Full Stack', 'Designer', 'Idea Guy', 'Pitch Wizard'].map((role) => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={role}
-                        checked={filterRoles.includes(role)}
-                        onCheckedChange={() => toggleRoleFilter(role)}
-                      />
-                      <label
-                        htmlFor={role}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {role}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time */}
-              <div className="space-y-4">
-                <Label className="text-sm font-semibold">Time Commitment</Label>
-                <div className="space-y-3">
-                  {timeCommitmentOptions.map((time) => (
-                    <div key={time} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={time}
-                        checked={filterTime.includes(time)}
-                        onCheckedChange={() => toggleTimeFilter(time)}
-                      />
-                      <label
-                        htmlFor={time}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {time}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Desktop Sidebar Filters */}
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <FilterContent
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filterRoles={filterRoles}
+                toggleRoleFilter={toggleRoleFilter}
+                filterTime={filterTime}
+                toggleTimeFilter={toggleTimeFilter}
+              />
             </div>
 
             {/* Main content */}
-            <div className="flex-1 space-y-14 min-w-0">
+            <div className="flex-1 space-y-8 lg:space-y-14 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-white">
                   {pagination ? (
@@ -299,10 +318,12 @@ const Projects = () => {
               </div>
 
               <div className="space-y-6">
-                {loading ? (
+                {isLoading ? (
                   <p className="text-muted-foreground">Loading projects...</p>
+                ) : isError ? (
+                  <p className="text-red-500">Failed to load projects.</p>
                 ) : projects.length > 0 ? (
-                  projects.map((project) => (
+                  projects.map((project: Project) => (
                     <FeedProjectCard
                       key={project.id}
                       project={project}
@@ -329,13 +350,13 @@ const Projects = () => {
                           setCurrentPage((prev) => Math.max(1, prev - 1));
                         }
                       }}
-                      disabled={!pagination.hasPreviousPage}
+                      disabled={!pagination.hasPreviousPage || isLoading}
                       className="rounded-xl flex items-center gap-2"
                     >
                       <span>←</span>
                       <span>Previous</span>
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="lg"
@@ -344,14 +365,14 @@ const Projects = () => {
                           setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1));
                         }
                       }}
-                      disabled={!pagination.hasNextPage}
+                      disabled={!pagination.hasNextPage || isLoading}
                       className="rounded-xl flex items-center gap-2"
                     >
                       <span>Next</span>
                       <span>→</span>
                     </Button>
                   </div>
-                  
+
                   {/* Page indicator below buttons */}
                   <div className="flex justify-center">
                     <span className="text-sm text-muted-foreground">

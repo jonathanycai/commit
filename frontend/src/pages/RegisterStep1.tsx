@@ -126,24 +126,23 @@ const RegisterStep1 = () => {
 
       <ProgressSidebar currentStep={1} />
 
-      <div className="relative z-10 min-h-screen flex items-center px-4 pl-24" style={{ paddingRight: '100px' }}>
-        <div className="w-full flex items-center justify-between gap-16">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 md:pl-24 md:pr-[100px]">
+        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8 md:gap-16">
           {/* Left side - Mascot */}
-          <div className="flex-1 flex justify-center">
+          <div className="hidden md:flex flex-1 justify-center">
             <img
               src={mascotBuilder}
               alt="Builder mascot"
-              className="w-96 h-auto"
+              className="w-64 md:w-96 h-auto"
             />
           </div>
 
           {/* Right side - Form Card */}
           <div
-            className="rounded-2xl p-10"
+            className="w-full max-w-md rounded-2xl p-6 md:p-10"
             style={{
               backgroundColor: 'rgba(20, 22, 35, 0.95)',
               backdropFilter: 'blur(10px)',
-              width: '500px',
               border: '1.35px solid rgba(103, 137, 236, 1)'
             }}
           >
@@ -237,7 +236,7 @@ const RegisterStep1 = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-4 z-20" style={{ right: '100px' }}>
+      <div className="fixed bottom-4 z-20 right-4 md:right-[100px]">
         <Button
           onClick={handleNext}
           disabled={isLoading}

@@ -10,7 +10,7 @@ const router = express.Router();
 // General API rate limiting - relaxed for development, strict for production
 export const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isDevelopment ? 1000 : 100, // 1000 for dev, 100 for production
+    max: isDevelopment ? 1000 : 1000, // 1000 requests per 15 minutes for both dev and prod
     message: {
         error: 'Too many requests from this IP, please try again later.',
         retryAfter: '15 minutes'
@@ -21,7 +21,7 @@ export const generalLimiter = rateLimit({
         res.status(429).json({
             error: 'Too many requests from this IP, please try again later.',
             retryAfter: '15 minutes',
-            limit: isDevelopment ? 1000 : 100,
+            limit: 1000,
             windowMs: '15 minutes',
             environment: isDevelopment ? 'development' : 'production'
         });
@@ -31,7 +31,7 @@ export const generalLimiter = rateLimit({
 // Environment-based rate limiting for authentication endpoints
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isDevelopment ? 50 : 5, // 50 for dev, 5 for production
+    max: isDevelopment ? 50 : 20, // 50 for dev, 20 for production
     message: {
         error: 'Too many authentication attempts, please try again later.',
         retryAfter: '15 minutes'
@@ -42,7 +42,7 @@ export const authLimiter = rateLimit({
         res.status(429).json({
             error: 'Too many authentication attempts, please try again later.',
             retryAfter: '15 minutes',
-            limit: isDevelopment ? 50 : 5,
+            limit: isDevelopment ? 50 : 20,
             windowMs: '15 minutes',
             environment: isDevelopment ? 'development' : 'production'
         });
@@ -140,7 +140,7 @@ router.get('/status', (req, res) => {
                 description: 'Application submissions'
             }
         },
-        note: isDevelopment 
+        note: isDevelopment
             ? 'Development mode: Relaxed limits for testing'
             : 'Production mode: Strict security limits'
     });

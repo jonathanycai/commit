@@ -67,7 +67,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
             >
               Reach out to {displayName} by:
             </p>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6">
               <a
                 href={`mailto:${user.email}`}
                 className="flex items-center gap-2 text-white hover:text-primary transition-colors"

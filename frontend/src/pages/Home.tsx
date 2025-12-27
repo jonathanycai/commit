@@ -43,18 +43,17 @@ const Home = () => {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="pt-40 pb-0 px-4">
+        <section className="pt-24 md:pt-40 pb-0 px-4">
           <div className="container mx-auto">
-            <div className="max-w-6xl flex items-center justify-between">
-              <div className="max-w-2xl space-y-6">
+            <div className="max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-0">
+              <div className="max-w-2xl space-y-6 text-center lg:text-left">
                 <div>
-                  <h1 className="font-bold leading-tight" style={{ fontSize: '48px', whiteSpace: 'nowrap' }}>
+                  <h1 className="font-bold leading-tight text-4xl md:text-5xl lg:text-[48px]" style={{ whiteSpace: 'normal' }}>
                     Stop overthinking.
                   </h1>
                   <h1
-                    className="font-bold leading-tight bg-gradient-hero bg-clip-text"
+                    className="font-bold leading-tight bg-gradient-hero bg-clip-text text-4xl md:text-5xl lg:text-[48px]"
                     style={{
-                      fontSize: '48px',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text'
@@ -86,7 +85,7 @@ const Home = () => {
                 </div>
               </div>
 
-              <div className="relative w-[650px] h-[400px]">
+              <div className="relative w-full max-w-[650px] h-[300px] md:h-[400px] scale-75 md:scale-100 origin-top lg:origin-center hidden md:block">
                 <img
                   src={mascot}
                   alt=""
@@ -151,7 +150,7 @@ const Home = () => {
         </section>
 
         {/* Browse Projects Section */}
-        <section className="pt-2 pb-4 px-4">
+        <section className="pt-16 md:pt-2 pb-4 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-4xl font-bold">
