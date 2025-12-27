@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getAllProjects, getFilteredProjects, applyToProjectBoard } from "@/lib/api";
 import FeedProjectCard from "@/components/projects/FeedProjectCard";
 import PostProjectDialog from "@/components/projects/PostProjectDialog";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Options for checkboxes
 const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
@@ -26,13 +27,14 @@ interface Project {
 }
 
 const Projects = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState<string | null>(null); // track which project is applying
+  // State for UI interactions
+  const [applying, setApplying] = useState<string | null>(null);
   const [appliedProjects, setAppliedProjects] = useState<Set<string>>(new Set());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Filters + search (for sidebar - multi-select)
+  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRoles, setFilterRoles] = useState<string[]>([]);
   const [filterExperience, setFilterExperience] = useState<string[]>([]);
   const [filterTime, setFilterTime] = useState<string[]>([]);
@@ -40,86 +42,70 @@ const Projects = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  } | null>(null);
 
-  // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterRoles, filterExperience, filterTime]);
+  }, [debouncedSearch, filterRoles, filterExperience, filterTime]);
 
-  // Fetch projects with debounced search
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  // React Query Implementation
+  const {
+    data,
+    isLoading,
+    isError
+  } = useQuery({
+    queryKey: ['projects', {
+      search: debouncedSearch,
+      role: filterRoles,
+      experience: filterExperience,
+      time: filterTime,
+      page: currentPage,
+      limit: itemsPerPage
+    }],
+    queryFn: async () => {
+      const hasFilters =
+        debouncedSearch.trim() ||
+        filterRoles.length > 0 ||
+        filterExperience.length > 0 ||
+        filterTime.length > 0;
 
-    const fetchProjects = async () => {
-      setLoading(true);
-      try {
-        const hasFilters =
-          searchQuery.trim() ||
-          filterRoles.length > 0 ||
-          filterExperience.length > 0 ||
-          filterTime.length > 0;
+      console.log('Fetching with filters:', {
+        search: debouncedSearch,
+        hasFilters,
+        filterRoles,
+        filterExperience,
+        filterTime,
+        page: currentPage,
+        limit: itemsPerPage
+      });
 
-        console.log('Fetching with filters:', {
-          search: searchQuery,
-          hasFilters,
-          filterRoles,
-          filterExperience,
-          filterTime,
+      if (hasFilters) {
+        return getFilteredProjects({
+          search: debouncedSearch.trim() || undefined,
+          role: filterRoles.length > 0 ? filterRoles : undefined,
+          experience: filterExperience.length > 0 ? filterExperience : undefined,
+          time_commitment: filterTime.length > 0 ? filterTime : undefined,
           page: currentPage,
-          limit: itemsPerPage
+          limit: itemsPerPage,
         });
-
-        const data = hasFilters
-          ? await getFilteredProjects({
-            search: searchQuery.trim() || undefined, // Pass undefined for empty strings
-            role: filterRoles.length > 0 ? filterRoles : undefined,
-            experience: filterExperience.length > 0 ? filterExperience : undefined,
-            time_commitment: filterTime.length > 0 ? filterTime : undefined,
-            page: currentPage,
-            limit: itemsPerPage,
-          })
-          : await getAllProjects(currentPage, itemsPerPage);
-
-        setProjects(data.projects || []);
-        if (data.pagination) {
-          setPagination(data.pagination);
-        }
-      } catch (err) {
-        console.error("Failed to fetch projects:", err);
-        toast.error("Failed to load projects");
-      } finally {
-        setLoading(false);
+      } else {
+        return getAllProjects(currentPage, itemsPerPage);
       }
-    };
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-    // Debounce the search query to avoid too many API calls
-    // Filter changes (not search) happen immediately
-    if (searchQuery.trim()) {
-      timeoutId = setTimeout(() => {
-        fetchProjects();
-      }, 500); // 500ms debounce for search
-    } else {
-      // No search query, fetch immediately (for filters)
-      fetchProjects();
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [searchQuery, filterRoles, filterExperience, filterTime, currentPage, itemsPerPage]);
+  const projects = data?.projects || [];
+  const pagination = data?.pagination || null;
 
   const handleApply = async (projectId: string) => {
     setApplying(projectId);
@@ -299,10 +285,12 @@ const Projects = () => {
               </div>
 
               <div className="space-y-6">
-                {loading ? (
+                {isLoading ? (
                   <p className="text-muted-foreground">Loading projects...</p>
+                ) : isError ? (
+                  <p className="text-red-500">Failed to load projects.</p>
                 ) : projects.length > 0 ? (
-                  projects.map((project) => (
+                  projects.map((project: Project) => (
                     <FeedProjectCard
                       key={project.id}
                       project={project}
@@ -329,13 +317,13 @@ const Projects = () => {
                           setCurrentPage((prev) => Math.max(1, prev - 1));
                         }
                       }}
-                      disabled={!pagination.hasPreviousPage}
+                      disabled={!pagination.hasPreviousPage || isLoading}
                       className="rounded-xl flex items-center gap-2"
                     >
                       <span>←</span>
                       <span>Previous</span>
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="lg"
@@ -344,14 +332,14 @@ const Projects = () => {
                           setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1));
                         }
                       }}
-                      disabled={!pagination.hasNextPage}
+                      disabled={!pagination.hasNextPage || isLoading}
                       className="rounded-xl flex items-center gap-2"
                     >
                       <span>Next</span>
                       <span>→</span>
                     </Button>
                   </div>
-                  
+
                   {/* Page indicator below buttons */}
                   <div className="flex justify-center">
                     <span className="text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import homepageBg from "@/assets/homepage-bg.svg";
 import mascotHappy from "@/assets/mascot-happy-new.svg";
 import mascotSad from "@/assets/mascot-sad.svg";
 import { getNextProject, recordProjectSwipe, applyToProject } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Project {
   id: string;
@@ -19,9 +20,8 @@ interface Project {
 }
 
 const Match = () => {
-  const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
 
   // Get user ID from token
   const token = localStorage.getItem('access_token');
@@ -35,15 +35,6 @@ const Match = () => {
     }
   };
   const userId = getUserIdFromToken();
-
-  // Fetch initial project when component mounts
-  useEffect(() => {
-    if (!userId) {
-      toast.error("Please log in to view projects");
-      return;
-    }
-    fetchNextProject();
-  }, [userId]);
 
   const formatTimestamp = (dateString: string) => {
     try {
@@ -60,20 +51,18 @@ const Match = () => {
     }
   };
 
-  const fetchNextProject = useCallback(async () => {
-    try {
-      setIsLoading(true);
-
+  // Fetch next project
+  const { data: projectData, isLoading, refetch } = useQuery({
+    queryKey: ['nextProject'],
+    queryFn: async () => {
+      if (!userId) throw new Error("User not logged in");
       const project = await getNextProject(userId);
 
       if (project.message || !project.id) {
-        setIsLoading(false);
-        setCurrentProject(null);
-        return;
+        return null;
       }
 
-      // Transform API response to match SwipeCard interface
-      const transformedProject: Project = {
+      return {
         id: project.id,
         title: project.title || 'Untitled Project',
         creator: project.users?.username || project.users?.email || 'Unknown Creator',
@@ -83,47 +72,66 @@ const Match = () => {
         ],
         timestamp: formatTimestamp(project.created_at),
         description: project.description || 'No description available.',
-      };
+      } as Project;
+    },
+    enabled: !!userId,
+    staleTime: Infinity, // Keep the current card until we explicitly invalidate
+  });
 
-      // Small delay to allow SwipeCard animation to finish if this was triggered by a swipe
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      setCurrentProject(transformedProject);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching project:", error);
-      const errorMessage = "Failed to load project";
-      toast.error(errorMessage);
-      setIsLoading(false);
-      setCurrentProject(null);
+  // Mutations
+  const swipeMutation = useMutation({
+    mutationFn: async ({ userId, projectId, direction }: { userId: string, projectId: string, direction: 'like' | 'pass' }) => {
+      return recordProjectSwipe(userId, projectId, direction);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['nextProject'] });
+    },
+    onError: () => {
+      toast.error("Failed to record swipe");
     }
-  }, [userId]);
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      return applyToProject(projectId);
+    },
+    onSuccess: () => {
+      toast.success("Application sent!");
+      // We don't invalidate here because swipeMutation will do it, or we do it manually if we want to be safe
+      queryClient.invalidateQueries({ queryKey: ['nextProject'] });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message || "Failed to apply";
+      if (errorMessage.includes("already exists")) {
+        toast.error("You've already applied to this project");
+        queryClient.invalidateQueries({ queryKey: ['nextProject'] });
+      } else {
+        toast.error(errorMessage);
+      }
+    }
+  });
+
+  const currentProject = projectData || null;
 
   const handleSwipeLeft = useCallback(async () => {
-    if (!currentProject || isProcessing) return;
+    if (!currentProject || isProcessing || !userId) return;
 
     const projectId = currentProject.id;
 
     try {
       setIsProcessing(true);
-
       // Record swipe as "pass"
-      await recordProjectSwipe(userId, projectId, 'pass');
+      await swipeMutation.mutateAsync({ userId, projectId, direction: 'pass' });
       toast.error("Not my thing");
-
-      // Move to next card after API call completes
-      await fetchNextProject();
     } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = "Failed to record swipe";
-      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
-  }, [currentProject, isProcessing, userId, fetchNextProject]);
+  }, [currentProject, isProcessing, userId, swipeMutation]);
 
   const handleSwipeRight = useCallback(async () => {
-    if (!currentProject || isProcessing) return;
+    if (!currentProject || isProcessing || !userId) return;
 
     const projectId = currentProject.id;
 
@@ -131,34 +139,21 @@ const Match = () => {
       setIsProcessing(true);
 
       // Record swipe as "like"
-      await recordProjectSwipe(userId, projectId, 'like');
+      await swipeMutation.mutateAsync({ userId, projectId, direction: 'like' });
 
       // Also create an application request to the project owner
       try {
-        const appResult = await applyToProject(projectId);
-        console.log("Application created successfully:", appResult);
+        await applyMutation.mutateAsync(projectId);
+        toast.success("Down to commit! 🎉");
       } catch (appError) {
-        // Don't fail the swipe if application fails (e.g., already applied)
         console.error("Application error:", appError);
-        // Only show toast if it's NOT an "already exists" error
-        const errorMessage = appError instanceof Error ? appError.message : 'Unknown error';
-        if (!errorMessage.includes("already exists")) {
-          toast.error(`Application failed: ${errorMessage}`);
-        }
       }
-
-      toast.success("Down to commit! 🎉");
-
-      // Move to next card after API call completes
-      await fetchNextProject();
     } catch (error) {
       console.error("Error recording swipe:", error);
-      const errorMessage = "Failed to record swipe";
-      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
-  }, [currentProject, isProcessing, userId, fetchNextProject]);
+  }, [currentProject, isProcessing, userId, swipeMutation, applyMutation]);
 
   return (
     <div className="min-h-screen bg-background font-lexend overflow-hidden">
@@ -247,7 +242,7 @@ const Match = () => {
                         <h3 className="text-3xl font-bold text-white">No projects left</h3>
                         <p className="text-white/60">Check back later for more projects!</p>
                         <Button
-                          onClick={fetchNextProject}
+                          onClick={() => refetch()}
                           className="mt-4 rounded-xl"
                           style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
                         >
