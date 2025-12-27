@@ -28,6 +28,10 @@ app.use(generalLimiter);
 // Rate limit status routes
 app.use("/rate-limit", rateLimitStatusRouter);
 
+app.get("/", (req, res) => {
+    res.redirect("/health");
+});
+
 // Health check routes
 app.use("/health", healthRoutes);
 
