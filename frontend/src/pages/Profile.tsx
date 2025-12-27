@@ -8,6 +8,7 @@ import PostProjectDialog from "@/components/projects/PostProjectDialog";
 import homepageBg from "@/assets/homepage-bg.svg";
 import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,111 +60,79 @@ interface Project {
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("matches");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [receivedRequests, setReceivedRequests] = useState<Application[]>([]);
   const [applicantIndices, setApplicantIndices] = useState<Record<string, number>>({});
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const fetchProjects = async () => {
-    try {
-      setIsLoadingProjects(true);
-      const response = await getMyProjects();
-      setProjects(response.my_projects || []);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to load your projects');
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  };
+  const queryClient = useQueryClient();
 
-  // Fetch user's projects
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  // Queries
+  const { data: myProjectsData, isLoading: isLoadingProjects } = useQuery({
+    queryKey: ['myProjects'],
+    queryFn: getMyProjects,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  // Fetch received requests
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        setIsLoadingRequests(true);
-        const response = await getReceivedRequests();
-        // console.log('Received requests response:', response);
-        // console.log('received_requests array:', response.received_requests);
-        // console.log('Number of requests:', response.received_requests?.length);
-        setReceivedRequests(response.received_requests || []);
-      } catch (error) {
-        console.error('Error fetching requests:', error);
-        toast.error('Failed to load requests');
-      } finally {
-        setIsLoadingRequests(false);
-      }
-    };
+  const { data: requestsData, isLoading: isLoadingRequests } = useQuery({
+    queryKey: ['receivedRequests'],
+    queryFn: getReceivedRequests,
+    staleTime: 1000 * 60 * 5,
+  });
 
-    fetchRequests();
-  }, []);
+  const { data: matchesData, isLoading: isLoadingMatches, error: matchesError } = useQuery({
+    queryKey: ['matches'],
+    queryFn: getMatches,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const projects = myProjectsData?.my_projects || [];
+  const receivedRequests = requestsData?.received_requests || [];
+  const matches = matchesData?.matches || [];
+
+  // Mutations
+  const approveMutation = useMutation({
+    mutationFn: approveApplication,
+    onSuccess: () => {
+      toast.success('Application approved!');
+      queryClient.invalidateQueries({ queryKey: ['receivedRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+    },
+    onError: () => toast.error('Failed to approve application'),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: rejectApplication,
+    onSuccess: () => {
+      toast.error('Application rejected');
+      queryClient.invalidateQueries({ queryKey: ['receivedRequests'] });
+    },
+    onError: () => toast.error('Failed to reject application'),
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: deleteProject,
+    onSuccess: () => {
+      toast.success("Project deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ['myProjects'] });
+      queryClient.invalidateQueries({ queryKey: ['receivedRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      setProjectToDelete(null);
+    },
+    onError: () => toast.error("Failed to delete project"),
+  });
 
   // Group requests by project and create project-request pairs
   const projectsWithRequests = projects
-    .map(project => {
-      const requestsForProject = receivedRequests.filter(req => req.project_id === project.id);
+    .map((project: Project) => {
+      const requestsForProject = receivedRequests.filter((req: Application) => req.project_id === project.id);
       return { project, requests: requestsForProject };
     })
-    .filter(pair => pair.requests.length > 0); // Only show projects with requests
-
-  // Function to fetch matches
-  const fetchMatches = async () => {
-    try {
-      setLoading(true);
-      const response = await getMatches();
-      setMatches(response.matches || []);
-      setError(null);
-    } catch (err: unknown) {
-      console.error('Error fetching matches:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch matches');
-      setMatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch matches when component mounts
-  useEffect(() => {
-    fetchMatches();
-  }, []);
-
-  // Fetch matches when matches tab is clicked
-  useEffect(() => {
-    if (activeTab === "matches") {
-      fetchMatches();
-    }
-  }, [activeTab]);
+    .filter((pair: { requests: any[] }) => pair.requests.length > 0);
 
   const handleDeleteProject = async () => {
     if (!projectToDelete) return;
-
-    try {
-      await deleteProject(projectToDelete);
-      toast.success("Project deleted successfully");
-      // Update local state
-      setProjects(prev => prev.filter(p => p.id !== projectToDelete));
-      // Also refresh matches and requests since they might be affected
-      fetchMatches();
-      const requestsResponse = await getReceivedRequests();
-      setReceivedRequests(requestsResponse.received_requests || []);
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error("Failed to delete project");
-    } finally {
-      setProjectToDelete(null);
-    }
+    deleteProjectMutation.mutate(projectToDelete);
   };
 
 
@@ -234,20 +203,20 @@ const Profile = () => {
 
             {activeTab === "matches" && (
               <div className="mt-8 space-y-4">
-                {loading ? (
+                {isLoadingMatches ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-white/60">Loading matches...</div>
                   </div>
-                ) : error ? (
+                ) : matchesError ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="text-red-400">Error: {error}</div>
+                    <div className="text-red-400">Error: {matchesError instanceof Error ? matchesError.message : 'Failed to load matches'}</div>
                   </div>
                 ) : matches.length === 0 ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-white/60">No matches yet. Start swiping to find your perfect project!</div>
                   </div>
                 ) : (
-                  matches.map((match) => (
+                  matches.map((match: Match) => (
                     <MatchCard key={match.id} match={match} />
                   ))
                 )}
@@ -303,28 +272,12 @@ const Profile = () => {
 
                     const handleApprove = async () => {
                       if (!currentApplicant) return;
-                      try {
-                        await approveApplication(currentApplicant.id);
-                        toast.success('Application approved!');
-                        const updatedRequests = receivedRequests.filter(app => app.id !== currentApplicant.id);
-                        setReceivedRequests(updatedRequests);
-                      } catch (error) {
-                        console.error('Error approving application:', error);
-                        toast.error('Failed to approve application');
-                      }
+                      approveMutation.mutate(currentApplicant.id);
                     };
 
                     const handleDecline = async () => {
                       if (!currentApplicant) return;
-                      try {
-                        await rejectApplication(currentApplicant.id);
-                        toast.error('Application rejected');
-                        const updatedRequests = receivedRequests.filter(app => app.id !== currentApplicant.id);
-                        setReceivedRequests(updatedRequests);
-                      } catch (error) {
-                        console.error('Error rejecting application:', error);
-                        toast.error('Failed to reject application');
-                      }
+                      rejectMutation.mutate(currentApplicant.id);
                     };
 
                     return (
@@ -378,7 +331,7 @@ const Profile = () => {
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         project={projectToEdit}
-        onProjectCreated={fetchProjects}
+        onProjectCreated={() => queryClient.invalidateQueries({ queryKey: ['myProjects'] })}
       />
     </div>
   );
