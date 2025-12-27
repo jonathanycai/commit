@@ -43,7 +43,7 @@ const CreateProject = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title || !description || technologies.length === 0 || lookingFor.length === 0) {
       toast.error("Please fill in all required fields");
       return;
@@ -56,7 +56,7 @@ const CreateProject = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-3xl mx-auto">
           <div className="space-y-4 mb-8">

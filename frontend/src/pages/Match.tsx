@@ -169,10 +169,22 @@ const Match = () => {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="container mx-auto px-4 pt-40 pb-12">
-          <div className="flex items-start justify-between gap-8">
+        <div className="container mx-auto px-4 pt-24 md:pt-40 pb-12">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-8">
+            {/* Mobile Title */}
+            <h2
+              className="lg:hidden text-2xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text mb-2"
+              style={{
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}
+            >
+              say yes to the ones that matter.
+            </h2>
+
             {/* Single Card Display */}
-            <div className="w-[550px] flex-shrink-0 relative">
+            <div className="w-full max-w-[550px] flex-shrink-0 relative">
               {/* Card Stack Effect */}
               {!isLoading && currentProject && (
                 <>
@@ -256,9 +268,9 @@ const Match = () => {
             </div>
 
             {/* Right Side - Mascots and Buttons */}
-            <div className="flex-1 flex flex-col items-center justify-center space-y-12 max-w-none pt-16">
+            <div className="flex-1 flex flex-col items-center justify-center space-y-8 lg:space-y-12 max-w-none pt-8 lg:pt-16">
               <h2
-                className="text-3xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
+                className="hidden lg:block text-2xl lg:text-3xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
                 style={{
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -268,16 +280,15 @@ const Match = () => {
                 say yes to the ones that matter.
               </h2>
 
-              <div className="flex items-end justify-center gap-12 w-full">
+              <div className="flex items-end justify-center gap-4 md:gap-12 w-full">
                 {/* Left Mascot with Button */}
                 <div className="flex flex-col items-center gap-4">
                   <img
                     src={mascotHappy}
                     alt=""
-                    className="animate-float"
+                    className="hidden lg:block animate-float w-[150px] md:w-[235px]"
                     style={{
                       animation: 'float 3s ease-in-out infinite',
-                      width: '235px',
                       maxWidth: 'none'
                     }}
                   />
@@ -291,14 +302,14 @@ const Match = () => {
                   </Button>
                 </div>
 
-                <span className="text-4xl font-bold text-foreground self-center">OR</span>
+                <span className="hidden lg:block text-2xl md:text-4xl font-bold text-foreground self-center">OR</span>
 
                 {/* Right Mascot with Button */}
                 <div className="flex flex-col items-center gap-4">
                   <img
                     src={mascotSad}
                     alt=""
-                    className="w-[200px] animate-float ml-10"
+                    className="hidden lg:block w-[130px] md:w-[200px] animate-float ml-6 md:ml-10"
                     style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}
                   />
                   <Button

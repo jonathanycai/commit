@@ -52,8 +52,8 @@ const ProjectDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 pt-24 pb-12">
+
+      <div className="container mx-auto px-4 pt-24 md:pt-32 pb-12">
         <div className="max-w-5xl mx-auto space-y-6">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
