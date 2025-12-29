@@ -19,14 +19,15 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
-app.use(cors({
-    origin: [
-        "https://commit-jade.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000"
-    ],
-    credentials: true
-}));
+app.use(cors(
+    {
+        origin: [
+            "https://commit-jade.vercel.app",
+            "http://localhost:8080"
+        ],
+        credentials: true
+    }
+));
 app.use(express.json());
 
 // Apply general rate limiting to all routes
