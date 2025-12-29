@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import healthRoutes from "./routes/health.js";
@@ -15,7 +16,17 @@ const app = express();
 // Trust proxy for rate limiting (required for Render/Vercel)
 app.set('trust proxy', 1);
 
-app.use(cors());
+// Security headers
+app.use(helmet());
+
+app.use(cors({
+    origin: [
+        "https://commit-jade.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // Apply general rate limiting to all routes
