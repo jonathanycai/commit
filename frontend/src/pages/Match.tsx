@@ -171,10 +171,10 @@ const Match = () => {
         <Navbar />
 
         <div className="container mx-auto px-4 pt-24 md:pt-40 pb-12">
-          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-8">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-0 lg:gap-8">
             {/* Mobile Title */}
             <h2
-              className="lg:hidden text-2xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text mb-2"
+              className="lg:hidden text-2xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text mb-6"
               style={{
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -190,7 +190,7 @@ const Match = () => {
               {!isLoading && currentProject && (
                 <>
                   <div
-                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/5"
+                    className="hidden lg:block absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/5"
                     style={{
                       transform: 'translate(-16px, -16px)',
                       zIndex: 0,
@@ -198,7 +198,7 @@ const Match = () => {
                     }}
                   />
                   <div
-                    className="absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/10"
+                    className="hidden lg:block absolute top-0 left-0 w-full h-full rounded-[32px] border border-[#79B1DF]/10"
                     style={{
                       transform: 'translate(-32px, -32px)',
                       zIndex: -1,
@@ -269,7 +269,7 @@ const Match = () => {
             </div>
 
             {/* Right Side - Mascots and Buttons */}
-            <div className="flex-1 flex flex-col items-center justify-center space-y-8 lg:space-y-12 max-w-none pt-8 lg:pt-16">
+            <div className="flex-1 flex flex-col items-center justify-center space-y-8 lg:space-y-12 max-w-none pt-0 lg:pt-16">
               <h2
                 className="hidden lg:block text-2xl lg:text-3xl font-bold text-center leading-tight bg-gradient-hero bg-clip-text"
                 style={{

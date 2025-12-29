@@ -31,23 +31,33 @@ const SwipeCard = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const swipeHandled = useRef(false);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isInteractive || isAnimatingOut) return;
-    e.preventDefault();
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    if (!('touches' in e)) {
+      e.preventDefault();
+    }
+
     setIsDragging(true);
-    setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
+    setStartPos({ x: clientX - position.x, y: clientY - position.y });
     // Prevent text selection
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'grabbing';
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDragging) return;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
     // Use requestAnimationFrame for smoother updates
     window.requestAnimationFrame(() => {
-      const newX = e.clientX - startPos.x;
-      const newY = e.clientY - startPos.y;
+      const newX = clientX - startPos.x;
+      const newY = clientY - startPos.y;
       setPosition({ x: newX, y: newY });
     });
   }, [isDragging, startPos]);
@@ -58,43 +68,30 @@ const SwipeCard = ({
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
 
-    // Only check if dragged to the right side (positive X)
-    if (position.x > 150) { // Reduced threshold for better feel
-      // Get the card's final position on screen
-      const cardRect = cardRef.current?.getBoundingClientRect();
-      const cardCenterX = cardRect ? cardRect.left + cardRect.width / 2 : 0;
-
-      // Get screen width to determine the OR text position (roughly center-right of screen)
-      const screenWidth = window.innerWidth;
-      const orTextX = screenWidth * 0.75; // Approximate position of OR text
-
+    // Check if dragged far enough in either direction
+    if (Math.abs(position.x) > 100) {
       setIsAnimatingOut(true);
 
       // Prevent double execution
       if (swipeHandled.current) return;
       swipeHandled.current = true;
 
-      if (cardCenterX > orTextX) {
-        // Right of OR = Not my thing (pass)
-        setAnimateToButton('right');
-        onSwipeLeft();
-        setTimeout(() => {
-          setPosition({ x: 0, y: 0 });
-          setIsAnimatingOut(false);
-          setAnimateToButton(null);
-          swipeHandled.current = false;
-        }, 600);
-      } else {
-        // Left of OR = Down to commit (like)
+      if (position.x > 0) {
+        // Dragged Right = Down to commit (like)
         setAnimateToButton('left');
         onSwipeRight();
-        setTimeout(() => {
-          setPosition({ x: 0, y: 0 });
-          setIsAnimatingOut(false);
-          setAnimateToButton(null);
-          swipeHandled.current = false;
-        }, 600);
+      } else {
+        // Dragged Left = Not my thing (pass)
+        setAnimateToButton('right');
+        onSwipeLeft();
       }
+
+      setTimeout(() => {
+        setPosition({ x: 0, y: 0 });
+        setIsAnimatingOut(false);
+        setAnimateToButton(null);
+        swipeHandled.current = false;
+      }, 600);
     } else {
       // Snap back to center if not dragged far enough
       setPosition({ x: 0, y: 0 });
@@ -103,11 +100,19 @@ const SwipeCard = ({
 
   useEffect(() => {
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      // Mouse events
+      window.addEventListener('mousemove', handleMouseMove as any);
       window.addEventListener('mouseup', handleMouseUp);
+
+      // Touch events
+      window.addEventListener('touchmove', handleMouseMove as any, { passive: false });
+      window.addEventListener('touchend', handleMouseUp);
+
       return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mousemove', handleMouseMove as any);
         window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleMouseMove as any);
+        window.removeEventListener('touchend', handleMouseUp);
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
@@ -162,11 +167,12 @@ const SwipeCard = ({
         touchAction: 'none',
       }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleMouseDown as any}
     >
       <div
         className="relative rounded-[32px] p-8"
         style={{
-          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%), hsl(var(--card))",
           backdropFilter: 'blur(12px)',
         }}
       >

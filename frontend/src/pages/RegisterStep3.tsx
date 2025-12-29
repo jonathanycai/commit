@@ -135,7 +135,7 @@ const RegisterStep3 = () => {
       }
 
       const step2DataRaw = sessionStorage.getItem("registerStep2");
-      let project_links: string[] = [];
+      let project_links: { name: string; link: string }[] = [];
       let projectsToCreate: Array<{ name: string; link: string }> = [];
 
       if (step2DataRaw) {
@@ -145,7 +145,7 @@ const RegisterStep3 = () => {
             projectsToCreate = parsedStep2.projects.filter(
               (project: any) => project.name && project.link
             );
-            project_links = projectsToCreate.map((project) => project.link);
+            project_links = projectsToCreate;
           }
         } catch (error) {
           console.error("Failed to parse step 2 data", error);

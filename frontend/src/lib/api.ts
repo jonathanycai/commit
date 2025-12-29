@@ -35,7 +35,7 @@ export interface UserProfile {
   time_commitment: string;
   socials?: Record<string, string>;
   tech_tags?: string[];
-  project_links?: string[];
+  project_links?: { name: string; link: string }[];
   created_at?: string;
 }
 

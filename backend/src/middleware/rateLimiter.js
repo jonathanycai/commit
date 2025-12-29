@@ -95,7 +95,7 @@ export const projectCreationLimiter = rateLimit({
 // Environment-based rate limiting for application submissions
 export const applicationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: isDevelopment ? 50 : 10, // 50 for dev, 10 for production
+    max: isDevelopment ? 200 : 100, // Increased from 50/10 to allow for "swiping right" flow
     message: {
         error: 'Too many application submissions, please try again later.',
         retryAfter: '1 hour'
@@ -106,7 +106,7 @@ export const applicationLimiter = rateLimit({
         res.status(429).json({
             error: 'Too many application submissions, please try again later.',
             retryAfter: '1 hour',
-            limit: isDevelopment ? 50 : 10,
+            limit: isDevelopment ? 200 : 100,
             windowMs: '1 hour',
             environment: isDevelopment ? 'development' : 'production'
         });
