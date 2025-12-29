@@ -10,7 +10,7 @@ create table if not exists users (
   time_commitment text,                               -- how much time they can contribute (e.g. "5 hrs/week")
   socials jsonb default '{}'::jsonb,                  -- links to socials (e.g. { "discord": "", "linkedin": "" })
   tech_tags text[] default '{}',                      -- list of technologies (e.g. ["react","nodejs","python"])
-  project_links text[] default '{}',                  -- NEW: URLs to user's past projects, portfolios, or demos
+  project_links jsonb default '[]'::jsonb,            -- NEW: Array of objects { name, link } for past projects
   created_at timestamptz default now()                -- timestamp when the user joined
 );
 

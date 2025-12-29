@@ -54,22 +54,27 @@ const RequestCard = ({
                             <div>
                                 <h4 className="text-sm font-semibold text-white mb-2">Projects</h4>
                                 <div className="flex flex-col gap-2">
-                                    {applicant.project_links.map((link: string, idx: number) => (
-                                        <a
-                                            key={idx}
-                                            href={link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2 text-white hover:text-primary transition-colors group"
-                                        >
-                                            <div className="h-7 w-7 rounded-full flex-shrink-0 bg-white/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <LinkIcon className="h-3.5 w-3.5 text-white group-hover:text-primary transition-colors" />
-                                            </div>
-                                            <span className="text-xs truncate opacity-90 group-hover:opacity-100 transition-opacity" title={link}>
-                                                {link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
-                                            </span>
-                                        </a>
-                                    ))}
+                                    {applicant.project_links.map((project: any, idx: number) => {
+                                        const link = typeof project === 'string' ? project : project.link;
+                                        const name = typeof project === 'string' ? 'Project' : (project.name || 'Project');
+
+                                        return (
+                                            <a
+                                                key={idx}
+                                                href={link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 text-white hover:text-primary transition-colors group"
+                                            >
+                                                <div className="h-7 w-7 rounded-full flex-shrink-0 bg-white/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                    <LinkIcon className="h-3.5 w-3.5 text-white group-hover:text-primary transition-colors" />
+                                                </div>
+                                                <span className="text-xs truncate opacity-90 group-hover:opacity-100 transition-opacity" title={name}>
+                                                    {name}
+                                                </span>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

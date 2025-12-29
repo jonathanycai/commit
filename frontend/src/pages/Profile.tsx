@@ -45,6 +45,7 @@ interface Application {
       discord?: string;
     };
     tech_tags?: string[];
+    project_links?: { name: string; link: string }[] | string[];
   };
 }
 
