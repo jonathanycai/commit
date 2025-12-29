@@ -166,7 +166,7 @@ const SwipeCard = ({
       <div
         className="relative rounded-[32px] p-8"
         style={{
-          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%)",
+          background: "linear-gradient(26.82deg, rgba(103, 137, 236, 0.1) 64.12%, rgba(103, 137, 236, 0.2) 89.86%), hsl(var(--card))",
           backdropFilter: 'blur(12px)',
         }}
       >
