@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiService, AuthResponse, UserProfile } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface User {
   id: string;
@@ -44,6 +45,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const isAuthenticated = !!user;
 
@@ -164,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
+    queryClient.clear();
   };
 
   const value: AuthContextType = {
