@@ -119,9 +119,9 @@ const Match = () => {
 
     try {
       setIsProcessing(true);
-      // Record swipe as "pass"
+      // Record swipe as "pass" (do nothing else)
       await swipeMutation.mutateAsync({ userId, projectId, direction: 'pass' });
-      toast.error("Not my thing");
+      toast.info("Passed");
     } catch (error) {
       console.error("Error recording swipe:", error);
     } finally {
@@ -137,23 +137,16 @@ const Match = () => {
     try {
       setIsProcessing(true);
 
-      // Record swipe as "like"
-      await swipeMutation.mutateAsync({ userId, projectId, direction: 'like' });
+      // Create an application request (this also records a "like" swipe on the backend)
+      await applyMutation.mutateAsync(projectId);
+      toast.success("Down to commit! 🎉");
 
-      // Also create an application request to the project owner
-      try {
-        await applyMutation.mutateAsync(projectId);
-        toast.success("Down to commit! 🎉");
-      } catch (appError) {
-        console.error("Application error:", appError);
-      }
     } catch (error) {
-      console.error("Error recording swipe:", error);
+      console.error("Error applying:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, [currentProject, isProcessing, userId, swipeMutation, applyMutation]);
-
+  }, [currentProject, isProcessing, userId, applyMutation]);
   return (
     <div className="min-h-screen bg-background font-lexend overflow-hidden">
       <div

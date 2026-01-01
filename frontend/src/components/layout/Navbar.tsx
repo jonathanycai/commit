@@ -19,7 +19,7 @@ import { apiService } from "@/lib/api";
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth(); // 👈 from your AuthContext
+  const { user, logout } = useAuth(); // 👈 from your AuthContext
   const [username, setUsername] = useState<string>("");
 
   const isActive = (path: string) => location.pathname === path;
@@ -53,7 +53,7 @@ const Navbar = () => {
   }, [user]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/");
   };
 
