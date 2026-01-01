@@ -78,11 +78,11 @@ const SwipeCard = ({
 
       if (position.x > 0) {
         // Dragged Right = Down to commit (like)
-        setAnimateToButton('left');
+        setAnimateToButton('right');
         onSwipeRight();
       } else {
         // Dragged Left = Not my thing (pass)
-        setAnimateToButton('right');
+        setAnimateToButton('left');
         onSwipeLeft();
       }
 
@@ -123,9 +123,9 @@ const SwipeCard = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
-        onSwipeRight(); // Left arrow = Down to commit
+        onSwipeLeft();
       } else if (e.key === 'ArrowRight') {
-        onSwipeLeft(); // Right arrow = Not my thing
+        onSwipeRight();
       }
     };
 
