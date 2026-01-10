@@ -9,6 +9,7 @@ import mascotHappy from "@/assets/mascot-happy-new.svg";
 import mascotSad from "@/assets/mascot-sad.svg";
 import { getNextProject, recordProjectSwipe, applyToProject } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Project {
   id: string;
@@ -22,16 +23,10 @@ const Match = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const queryClient = useQueryClient();
 
-  // Get user ID from token
-  const token = localStorage.getItem('access_token');
+  // Get user ID from user context (tokens are now in httpOnly cookies, not accessible from client)
+  const { user } = useAuth();
   const getUserIdFromToken = () => {
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.sub;
-    } catch {
-      return null;
-    }
+    return user?.id || null;
   };
   const userId = getUserIdFromToken();
 
