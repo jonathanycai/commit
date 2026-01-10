@@ -8,12 +8,7 @@ export interface AuthResponse {
     created_at: string;
     updated_at: string;
   };
-  session: {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-    token_type: string;
-  };
+  // Note: session tokens are now in httpOnly cookies, not in response body
 }
 
 export interface LoginRequest {
@@ -103,17 +98,12 @@ class ApiService {
         'Content-Type': 'application/json',
         ...options.headers,
       },
+      credentials: 'include', // Include cookies (httpOnly tokens) in requests
       ...options,
     };
 
-    // Add auth token if available
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
+    // Note: Tokens are now in httpOnly cookies, not localStorage
+    // The browser automatically includes cookies with credentials: 'include'
 
     try {
       const response = await fetch(url, config);
@@ -149,6 +139,20 @@ class ApiService {
     return this.request<{ score: number; feedback: string }>('/auth/check-password', {
       method: 'POST',
       body: JSON.stringify({ password }),
+    });
+  }
+
+  async logout(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/logout', {
+      method: 'POST',
+    });
+  }
+
+  // OAuth callback - sends tokens to backend to set httpOnly cookies
+  async oauthCallback(tokens: { access_token: string; refresh_token: string; expires_at?: number }): Promise<AuthResponse> {
+    return this.request<AuthResponse>('/auth/oauth/callback', {
+      method: 'POST',
+      body: JSON.stringify(tokens),
     });
   }
 
@@ -205,30 +209,32 @@ class ApiService {
   async healthCheck(): Promise<{ ok: boolean }> {
     return this.request<{ ok: boolean }>('/health');
   }
+
+  // Check cookie status (for debugging)
+  async checkCookieStatus(): Promise<{
+    cookiesEnabled: boolean;
+    hasAccessTokenCookie: boolean;
+    hasRefreshTokenCookie: boolean;
+    cookieCount: number;
+    cookieNames: string[];
+    message: string;
+  }> {
+    return this.request('/auth/cookie-status', {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiService = new ApiService(API_BASE_URL);
 
-// Helper function to get auth token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('access_token');
-};
-
 // Helper function for API requests
+// Note: Tokens are now in httpOnly cookies, automatically sent with credentials: 'include'
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
-
-  // Check if token exists and throw error early if not
-  if (!token) {
-    console.error('No token found in localStorage');
-    throw new Error('No token provided. Please log in.');
-  }
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
+    credentials: 'include', // Include cookies (httpOnly tokens) in requests
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
   });
