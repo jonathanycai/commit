@@ -60,7 +60,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 // Ensure preflight requests always receive CORS headers
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser()); // Parse cookies for httpOnly token storage
 
