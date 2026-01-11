@@ -8,18 +8,20 @@ const router = express.Router();
 
 // Helper function to set httpOnly cookies for tokens
 const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
+    // Check if we are in development mode explicitly
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
-    // In production (Vercel -> Render), we need sameSite: 'none' and secure: true
-    // In development (localhost), we need sameSite: 'lax' and secure: false (usually)
-    // IMPORTANT: sameSite: 'none' REQUIRES secure: true
-    const sameSite = isProduction ? 'none' : 'lax';
+    // Default to secure/none for production/staging/preview
+    // Only use loose settings for explicit development (localhost)
+    const sameSite = isDevelopment ? 'lax' : 'none';
+    const secure = !isDevelopment; // true unless development
+
+    const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
 
     // Set access token cookie
     res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction || sameSite === 'none', // Always secure if sameSite is none
+        secure: secure,
         sameSite: sameSite,
         maxAge: maxAge,
         path: '/',
@@ -28,7 +30,7 @@ const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
     // Set refresh token cookie (longer expiry)
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: isProduction || sameSite === 'none',
+        secure: secure,
         sameSite: sameSite,
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/',
@@ -38,20 +40,19 @@ const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
 // Helper function to clear auth cookies
 // Must use same options as setCookie to ensure proper clearing
 const clearAuthCookies = (res) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const sameSite = isProduction ? 'none' : 'lax';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const sameSite = isDevelopment ? 'lax' : 'none';
+    const secure = !isDevelopment;
 
     const cookieOptions = {
         httpOnly: true,
-        secure: isProduction || sameSite === 'none',
+        secure: secure,
         sameSite: sameSite,
         path: '/',
     };
     res.clearCookie('access_token', cookieOptions);
     res.clearCookie('refresh_token', cookieOptions);
-};
-
-// Register new user
+};// Register new user
 router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
     try {
         const { email, password } = req.body;

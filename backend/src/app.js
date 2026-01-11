@@ -22,10 +22,31 @@ app.use(helmet());
 
 app.use(cors(
     {
-        origin: [
-            "https://commit-jade.vercel.app",
-            "http://localhost:8080"
-        ],
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+
+            // Allow localhost
+            if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+                return callback(null, true);
+            }
+
+            // Allow vercel preview deployments and production
+            if (origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+
+            // Allow specific domains
+            const allowedOrigins = [
+                "https://commit-jade.vercel.app"
+            ];
+
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                return callback(null, true);
+            }
+
+            callback(new Error('Not allowed by CORS'));
+        },
         credentials: true
     }
 ));
