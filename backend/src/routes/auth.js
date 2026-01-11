@@ -10,12 +10,17 @@ const router = express.Router();
 const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
-    
+
+    // In production (Vercel -> Render), we need sameSite: 'none' and secure: true
+    // In development (localhost), we need sameSite: 'lax' and secure: false (usually)
+    // IMPORTANT: sameSite: 'none' REQUIRES secure: true
+    const sameSite = isProduction ? 'none' : 'lax';
+
     // Set access token cookie
     res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction, // Only send over HTTPS in production
-        sameSite: 'lax', // CSRF protection
+        secure: isProduction || sameSite === 'none', // Always secure if sameSite is none
+        sameSite: sameSite,
         maxAge: maxAge,
         path: '/',
     });
@@ -23,8 +28,8 @@ const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
     // Set refresh token cookie (longer expiry)
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
+        secure: isProduction || sameSite === 'none',
+        sameSite: sameSite,
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/',
     });
@@ -34,10 +39,12 @@ const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
 // Must use same options as setCookie to ensure proper clearing
 const clearAuthCookies = (res) => {
     const isProduction = process.env.NODE_ENV === 'production';
+    const sameSite = isProduction ? 'none' : 'lax';
+
     const cookieOptions = {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
+        secure: isProduction || sameSite === 'none',
+        sameSite: sameSite,
         path: '/',
     };
     res.clearCookie('access_token', cookieOptions);
@@ -135,8 +142,8 @@ router.get("/cookie-status", (req, res) => {
         cookieCount: cookieNames.length,
         cookieNames: cookieNames.filter(name => !name.includes('token') || name === 'access_token' || name === 'refresh_token'), // Don't expose actual token values
         // Note: httpOnly cookies cannot be read by JavaScript, but they are sent automatically with requests
-        message: hasAccessToken && hasRefreshToken 
-            ? 'Cookies are present and being used' 
+        message: hasAccessToken && hasRefreshToken
+            ? 'Cookies are present and being used'
             : 'No auth cookies found. Please log in.',
     });
 });
