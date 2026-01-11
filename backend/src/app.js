@@ -22,28 +22,45 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-app.use(cors(
-    {
-        origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps or curl requests)
-            if (!origin) return callback(null, true);
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
 
-            // Allow localhost and Vercel deployments (production and preview)
-            if (
-                origin === "http://localhost:8080" ||
-                origin === "http://localhost:5173" ||
-                origin.endsWith(".vercel.app") ||
-                origin === "https://commit-jade.vercel.app"
-            ) {
-                callback(null, true);
-            } else {
-                console.log('Blocked by CORS:', origin);
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
-        credentials: true
+    // Local dev
+    if (origin === "http://localhost:8080" || origin === "http://localhost:5173") {
+        return true;
     }
-));
+
+    try {
+        const { hostname } = new URL(origin);
+        // Vercel preview + production domains
+        if (hostname === "commit-jade.vercel.app" || hostname.endsWith(".vercel.app")) {
+            return true;
+        }
+    } catch {
+        // Non-URL origin string
+    }
+
+    return false;
+};
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowed = isAllowedOrigin(origin);
+        if (!allowed) {
+            console.log('Blocked by CORS:', origin);
+        }
+        // IMPORTANT: do not pass an Error here; it causes Express to reply without CORS headers,
+        // which surfaces as “No Access-Control-Allow-Origin header” in the browser.
+        callback(null, allowed);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+// Ensure preflight requests always receive CORS headers
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser()); // Parse cookies for httpOnly token storage
 
