@@ -35,6 +35,17 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser()); // Parse cookies for httpOnly token storage
 
+// Debug middleware to log cookies (helper for debugging auth issues)
+app.use((req, res, next) => {
+    // Only log for API requests, ignore static/health checks to reduce noise
+    if (req.path.startsWith('/auth') || req.path.startsWith('/users') || req.path.startsWith('/applications')) {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+        console.log('Origin:', req.headers.origin);
+        console.log('Cookies received:', Object.keys(req.cookies || {}));
+    }
+    next();
+});
+
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
 

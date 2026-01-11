@@ -18,6 +18,8 @@ const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
 
     const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
 
+    console.log(`Setting auth cookies: sameSite=${sameSite}, secure=${secure}, maxAge=${maxAge}`);
+
     // Set access token cookie
     res.cookie('access_token', accessToken, {
         httpOnly: true,
