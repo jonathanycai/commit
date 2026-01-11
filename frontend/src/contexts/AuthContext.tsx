@@ -17,6 +17,8 @@ interface User {
   project_links?: { name: string; link: string }[];
 }
 
+
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
