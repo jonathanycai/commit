@@ -14,7 +14,7 @@ interface User {
   experience?: string;
   time_commitment?: string;
   tech_tags?: string[];
-  project_links?: string[];
+  project_links?: { name: string; link: string }[];
 }
 
 interface AuthContextType {
