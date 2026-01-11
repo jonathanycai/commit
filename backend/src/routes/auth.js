@@ -3,46 +3,46 @@ import { createAuthClient } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validatePasswordStrength, checkPasswordStrength } from "../middleware/passwordValidator.js";
+import {
+    AUTH_COOKIE_NAME,
+    REFRESH_COOKIE_NAME,
+    CSRF_COOKIE_NAME,
+    getAuthCookieOptions,
+    getCsrfCookieOptions,
+} from "../config/cookies.js";
+import { issueCsrfCookie } from "../middleware/csrf.js";
 
 const router = express.Router();
 
 // Helper function to set httpOnly cookies for tokens
 const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
-    
-    // Set access token cookie
-    res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: isProduction, // Only send over HTTPS in production
-        sameSite: 'lax', // CSRF protection
-        maxAge: maxAge,
-        path: '/',
-    });
+    const accessMaxAgeMs =
+        typeof expiresAt === "number" ? Math.max(expiresAt * 1000 - Date.now(), 0) : 1000 * 60 * 60;
 
-    // Set refresh token cookie (longer expiry)
-    res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/',
-    });
+    res.cookie(AUTH_COOKIE_NAME, accessToken, getAuthCookieOptions({ maxAgeMs: accessMaxAgeMs }));
+    res.cookie(
+        REFRESH_COOKIE_NAME,
+        refreshToken,
+        getAuthCookieOptions({ maxAgeMs: 1000 * 60 * 60 * 24 * 30 })
+    );
 };
 
 // Helper function to clear auth cookies
 // Must use same options as setCookie to ensure proper clearing
 const clearAuthCookies = (res) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        path: '/',
-    };
-    res.clearCookie('access_token', cookieOptions);
-    res.clearCookie('refresh_token', cookieOptions);
+    const cookieOptions = getAuthCookieOptions();
+    res.clearCookie(AUTH_COOKIE_NAME, cookieOptions);
+    res.clearCookie(REFRESH_COOKIE_NAME, cookieOptions);
+
+    // CSRF cookie is not httpOnly, but we clear it on logout.
+    res.clearCookie(CSRF_COOKIE_NAME, getCsrfCookieOptions());
 };
+
+// Issue/refresh CSRF cookie (double-submit token strategy)
+router.get("/csrf", (req, res) => {
+    issueCsrfCookie(res);
+    res.json({ ok: true });
+});
 
 // Register new user
 router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
@@ -66,6 +66,7 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
         // Set httpOnly cookies instead of returning tokens in response
         if (data.session) {
             setAuthCookies(res, data.session.access_token, data.session.refresh_token, data.session.expires_at);
+            issueCsrfCookie(res);
         }
 
         // Return user info without tokens (security: tokens are in httpOnly cookies)
@@ -100,6 +101,7 @@ router.post("/login", authLimiter, async (req, res) => {
         // Set httpOnly cookies instead of returning tokens in response
         if (data.session) {
             setAuthCookies(res, data.session.access_token, data.session.refresh_token, data.session.expires_at);
+            issueCsrfCookie(res);
         }
 
         // Return user info without tokens (security: tokens are in httpOnly cookies)
@@ -121,10 +123,20 @@ router.get("/health", requireAuth, (req, res) => {
     });
 });
 
+// Session hydration endpoint
+router.get("/me", requireAuth, (req, res) => {
+    res.json({
+        user: {
+            id: req.user.id,
+            email: req.user.email,
+        },
+    });
+});
+
 // Cookie status endpoint - check if cookies are being used (safe for debugging)
 router.get("/cookie-status", (req, res) => {
-    const hasAccessToken = !!req.cookies?.access_token;
-    const hasRefreshToken = !!req.cookies?.refresh_token;
+    const hasAccessToken = !!req.cookies?.[AUTH_COOKIE_NAME];
+    const hasRefreshToken = !!req.cookies?.[REFRESH_COOKIE_NAME];
     const allCookies = req.cookies || {};
     const cookieNames = Object.keys(allCookies);
 
@@ -133,10 +145,10 @@ router.get("/cookie-status", (req, res) => {
         hasAccessTokenCookie: hasAccessToken,
         hasRefreshTokenCookie: hasRefreshToken,
         cookieCount: cookieNames.length,
-        cookieNames: cookieNames.filter(name => !name.includes('token') || name === 'access_token' || name === 'refresh_token'), // Don't expose actual token values
+        cookieNames,
         // Note: httpOnly cookies cannot be read by JavaScript, but they are sent automatically with requests
-        message: hasAccessToken && hasRefreshToken 
-            ? 'Cookies are present and being used' 
+        message: hasAccessToken && hasRefreshToken
+            ? 'Cookies are present and being used'
             : 'No auth cookies found. Please log in.',
     });
 });
@@ -169,6 +181,7 @@ router.post("/oauth/callback", authLimiter, async (req, res) => {
 
         // Set httpOnly cookies
         setAuthCookies(res, access_token, refresh_token, expires_at);
+        issueCsrfCookie(res);
 
         // Return user info
         res.json({

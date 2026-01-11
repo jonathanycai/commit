@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiService, AuthResponse, UserProfile } from '@/lib/api';
+import { apiService } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface User {
@@ -57,12 +57,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      // Tokens are in httpOnly cookies, automatically sent with requests
-      // Try to get user profile to validate authentication
-      const response = await apiService.getUserProfile();
-      if (response.profile) {
-        setUser(response.profile);
+      // Ensure CSRF cookie exists for write requests (double-submit token).
+      await apiService.csrf();
+
+      // Hydrate session from HttpOnly cookie.
+      const me = await apiService.me();
+
+      // Try to fetch profile (may not exist immediately after register).
+      try {
+        const response = await apiService.getUserProfile();
+        if (response.profile) {
+          setUser(response.profile);
+          return;
+        }
+      } catch {
+        // fall back to minimal /auth/me
       }
+
+      setUser(me.user);
     } catch (error) {
       console.error('Auth check failed:', error);
       // If auth fails, user is not authenticated (cookies may be invalid/expired)
@@ -75,11 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response: AuthResponse = await apiService.login({ email, password });
-
-      // Tokens are now in httpOnly cookies (set by backend), not in response
-      // Set user from response
-      setUser(response.user);
+      await apiService.login({ email, password });
+      await checkAuth();
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -91,11 +100,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response: AuthResponse = await apiService.register({ email, password });
-
-      // Tokens are now in httpOnly cookies (set by backend), not in response
-      // Set user from response
-      setUser(response.user);
+      await apiService.register({ email, password });
+      await checkAuth();
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;

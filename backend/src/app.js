@@ -11,26 +11,25 @@ import projectRoutes from "./routes/projects.js";
 import notificationRoutes from "./routes/notifications.js";
 import swipesRoutes from "./swipes/routes.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
+import { corsOptions } from "./middleware/cors.js";
+import { csrfProtection } from "./middleware/csrf.js";
 
 const app = express();
 
 // Trust proxy for rate limiting (required for Render/Vercel)
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // Security headers
 app.use(helmet());
 
-app.use(cors(
-    {
-        origin: [
-            "https://commit-jade.vercel.app",
-            "http://localhost:8080"
-        ],
-        credentials: true
-    }
-));
+// CORS (dynamic, preview-safe). NOTE: never use '*' with credentials.
+app.use(cors(corsOptions));
+
 app.use(express.json());
-app.use(cookieParser()); // Parse cookies for httpOnly token storage
+app.use(cookieParser()); // Parse cookies for HttpOnly token storage
+
+// CSRF protection for cookie-authenticated write routes.
+app.use(csrfProtection);
 
 // Apply general rate limiting to all routes
 app.use(generalLimiter);

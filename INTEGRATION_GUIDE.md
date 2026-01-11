@@ -27,7 +27,7 @@ npm install
 npm start
 ```
 
-### Frontend (Port 5173)
+### Frontend (Port 8080)
 ```bash
 cd frontend
 npm install
@@ -39,6 +39,9 @@ npm run dev
 ### Authentication
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
+- `GET /auth/me` - Session hydration (reads HttpOnly cookie)
+- `GET /auth/csrf` - Issues CSRF cookie (double-submit token)
+- `POST /auth/logout` - Clears auth cookies
 - `POST /auth/check-password` - Password strength validation
 
 ### User Profile
@@ -48,7 +51,14 @@ npm run dev
 
 ## Environment Configuration
 
-The frontend automatically connects to `http://localhost:4000` for the backend API. To change this, update the `VITE_API_URL` environment variable in the frontend.
+### Local dev
+- Frontend uses a Vite dev-server proxy: requests to `/api/*` are forwarded to `http://localhost:4000/*`.
+- This makes requests **same-origin** in the browser, so cookies work over HTTP in dev.
+
+### Preview/Production
+- Set `VITE_API_URL` in Vercel to your Render backend URL (set separately for **Preview** vs **Production** in Vercel env vars).
+- On the backend, set `FRONTEND_ORIGIN` to your production Vercel domain.
+- On backend preview environments, set `ALLOW_PREVIEW_ORIGINS=true` so `*.vercel.app` is accepted.
 
 ## User Flow
 
@@ -60,8 +70,10 @@ The frontend automatically connects to `http://localhost:4000` for the backend A
 
 - **Password Validation**: Backend validates password strength
 - **Rate Limiting**: API calls are rate-limited to prevent abuse
-- **Token Management**: JWT tokens stored securely in localStorage
+- **Token Management**: JWT stored in **HttpOnly cookies** (not readable by JavaScript)
 - **Authentication Guards**: Protected routes require authentication
+- **CORS**: Dynamic origin validation with `credentials: true` (no wildcard)
+- **CSRF**: Double-submit token (`csrf` cookie + `X-CSRF-Token` header) for write requests
 
 ## Next Steps
 

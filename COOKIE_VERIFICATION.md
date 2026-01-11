@@ -7,8 +7,9 @@
 3. In the left sidebar, expand **Cookies**
 4. Click on your domain (e.g., `localhost:4000` or `localhost:8080`)
 5. Look for:
-   - `access_token` - Should be present after login
-   - `refresh_token` - Should be present after login
+  - `auth` - HttpOnly access token (should be present after login)
+  - `refresh` - HttpOnly refresh token (should be present after login)
+  - `csrf` - Non-HttpOnly CSRF token (used as a header for write requests)
 
 **Important Notes:**
 - If cookies are `httpOnly: true`, you won't see their values in the JavaScript console
@@ -43,12 +44,14 @@ apiService.checkCookieStatus().then(console.log);
 2. Make any authenticated API request (e.g., go to a protected page)
 3. Click on the request
 4. Go to **Headers** → **Request Headers**
-5. Look for `Cookie:` header - it should contain `access_token` and `refresh_token`
+5. Look for `Cookie:` header - it should contain `auth` and `refresh`
+
+Tip for local dev: your frontend uses a Vite proxy, so requests will be `http://localhost:8080/api/...`.
 
 ## What to Look For
 
 ✅ **Cookies are working if:**
-- You see `access_token` and `refresh_token` cookies in Dev Tools
+- You see `auth` and `refresh` cookies in Dev Tools
 - Cookie status endpoint returns `hasAccessTokenCookie: true` and `hasRefreshTokenCookie: true`
 - API requests include cookies in the `Cookie:` header
 - You stay logged in after refreshing the page

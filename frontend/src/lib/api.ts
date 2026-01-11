@@ -1,4 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Local dev uses Vite proxy (/api -> http://localhost:4000) so cookie auth works over HTTP.
+// Preview/prod should set VITE_API_URL to the Render backend URL.
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_URL || '');
+
+const readCookie = (name: string): string | null => {
+  const parts = document.cookie.split(';').map((p) => p.trim());
+  for (const part of parts) {
+    if (part.startsWith(`${name}=`)) {
+      return decodeURIComponent(part.slice(name.length + 1));
+    }
+  }
+  return null;
+};
 
 export interface AuthResponse {
   message: string;
@@ -93,12 +107,18 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    const method = (options.method || 'GET').toUpperCase();
+    const csrfToken = method === 'GET' || method === 'HEAD' || method === 'OPTIONS'
+      ? null
+      : readCookie('csrf');
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         ...options.headers,
       },
-      credentials: 'include', // Include cookies (httpOnly tokens) in requests
+      credentials: 'include', // Include cookies (HttpOnly tokens) in requests
       ...options,
     };
 
@@ -145,6 +165,18 @@ class ApiService {
   async logout(): Promise<{ message: string }> {
     return this.request<{ message: string }>('/auth/logout', {
       method: 'POST',
+    });
+  }
+
+  async csrf(): Promise<{ ok: boolean }> {
+    return this.request<{ ok: boolean }>('/auth/csrf', {
+      method: 'GET',
+    });
+  }
+
+  async me(): Promise<{ user: { id: string; email: string } }> {
+    return this.request<{ user: { id: string; email: string } }>('/auth/me', {
+      method: 'GET',
     });
   }
 
