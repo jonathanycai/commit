@@ -3,11 +3,29 @@ import { createAuthClient } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validatePasswordStrength, checkPasswordStrength } from "../middleware/passwordValidator.js";
+import { verifyCsrf } from "../middleware/csrf.js";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt.js";
 
 const router = express.Router();
 
+// CSRF enforcement toggle (default OFF)
+// Flip to true once cookie-based refresh works end-to-end.
+const ENABLE_CSRF = true;
+
+const passthrough = (req, res, next) => next();
+
+const getRefreshCookieOptions = () => {
+    const isProd = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+    };
+};
+
 // Register new user
-router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
+router.post("/register", authLimiter, validatePasswordStrength, ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -25,10 +43,20 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
             return res.status(400).json({ error: error.message });
         }
 
+        if (!data.user) {
+            return res.status(500).json({ error: "Registration failed" });
+        }
+
+        const accessToken = signAccessToken({ id: data.user.id, email: data.user.email });
+        const refreshToken = signRefreshToken({ id: data.user.id, email: data.user.email });
+
+        res.cookie("refreshToken", refreshToken, getRefreshCookieOptions());
+
         res.json({
             message: 'User registered successfully',
             user: data.user,
-            session: data.session
+            accessToken,
+            token: accessToken
         });
     } catch (error) {
         res.status(500).json({ error: 'Registration failed' });
@@ -36,7 +64,7 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
 });
 
 // Login user
-router.post("/login", authLimiter, async (req, res) => {
+router.post("/login", authLimiter, ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -54,13 +82,55 @@ router.post("/login", authLimiter, async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
 
+        if (!data.user) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        const accessToken = signAccessToken({ id: data.user.id, email: data.user.email });
+        const refreshToken = signRefreshToken({ id: data.user.id, email: data.user.email });
+
+        res.cookie("refreshToken", refreshToken, getRefreshCookieOptions());
+
         res.json({
             message: 'Login successful',
             user: data.user,
-            session: data.session
+            accessToken,
+            token: accessToken
         });
     } catch (error) {
         res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// Refresh access token using HttpOnly refreshToken cookie
+router.post("/refresh", ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+    try {
+        const refreshToken = req.cookies?.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: "Missing refresh token" });
+        }
+
+        let payload;
+        try {
+            payload = verifyRefreshToken(refreshToken);
+        } catch {
+            return res.status(401).json({ error: "Invalid or expired refresh token" });
+        }
+
+        const accessToken = signAccessToken({ id: payload.sub, email: payload.email });
+        return res.json({ accessToken });
+    } catch (error) {
+        return res.status(500).json({ error: "Refresh failed" });
+    }
+});
+
+// Logout: clear refresh cookie
+router.post("/logout", ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+    try {
+        res.clearCookie("refreshToken", getRefreshCookieOptions());
+        res.json({ message: "Logged out" });
+    } catch (error) {
+        res.status(500).json({ error: "Logout failed" });
     }
 });
 

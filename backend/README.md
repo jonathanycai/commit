@@ -28,6 +28,11 @@ npm run start
 
 The server will start on `http://localhost:4000`
 
+## Auth + CSRF toggle
+
+- `ENABLE_CSRF` (default: off)
+    - Flip the `ENABLE_CSRF` constant in `src/routes/auth.js` to enforce CSRF checks on `POST /auth/login`, `POST /auth/register`, `POST /auth/refresh`, and `POST /auth/logout`.
+
 ### Development Mode
 
 For development with auto-reload on file changes:

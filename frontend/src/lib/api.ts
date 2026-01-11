@@ -1,3 +1,5 @@
+import { http } from "@/lib/http";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 export interface AuthResponse {
@@ -8,12 +10,8 @@ export interface AuthResponse {
     created_at: string;
     updated_at: string;
   };
-  session: {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-    token_type: string;
-  };
+  accessToken: string;
+  token?: string;
 }
 
 export interface LoginRequest {
@@ -92,41 +90,45 @@ class ApiService {
     this.baseURL = baseURL;
   }
 
-  private async request<T>(
+  private async request<ResponseT>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+  ): Promise<ResponseT> {
+    const method = (options.method || "GET").toUpperCase();
 
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
+    const normalizeHeaders = (
+      headersInit: HeadersInit | undefined
+    ): Record<string, string> => {
+      if (!headersInit) return {};
+      if (headersInit instanceof Headers) {
+        return Object.fromEntries(headersInit.entries());
+      }
+      if (Array.isArray(headersInit)) {
+        return Object.fromEntries(headersInit);
+      }
+      return headersInit;
     };
 
-    // Add auth token if available
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...normalizeHeaders(options.headers),
+    };
+
+    const hasBody = options.body !== undefined && options.body !== null;
+    const data = hasBody && typeof options.body === "string" ? JSON.parse(options.body) : options.body;
 
     try {
-      const response = await fetch(url, config);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
+      const res = await http.request<ResponseT>({
+        url: endpoint,
+        method,
+        headers,
+        data: hasBody ? data : undefined,
+      });
+      return res.data;
+    } catch (error: any) {
+      const message = error?.response?.data?.error || error?.message || "API request failed";
+      console.error("API request failed:", message);
+      throw new Error(message);
     }
   }
 
@@ -142,6 +144,24 @@ class ApiService {
     return this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(credentials),
+    });
+  }
+
+  async getCsrfToken(): Promise<{ csrfToken: string }> {
+    return this.request<{ csrfToken: string }>("/csrf-token", {
+      method: "GET",
+    });
+  }
+
+  async refreshAccessToken(): Promise<{ accessToken: string }> {
+    return this.request<{ accessToken: string }>("/auth/refresh", {
+      method: "POST",
+    });
+  }
+
+  async logout(): Promise<{ message: string }> {
+    return this.request<{ message: string }>("/auth/logout", {
+      method: "POST",
     });
   }
 
@@ -209,49 +229,43 @@ class ApiService {
 
 export const apiService = new ApiService(API_BASE_URL);
 
-// Helper function to get auth token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('access_token');
-};
-
-// Helper function for API requests
+// Helper function for API requests (uses axios client + auth/CSRF interceptors)
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
-
-  // Check if token exists and throw error early if not
-  if (!token) {
-    console.error('No token found in localStorage');
-    throw new Error('No token provided. Please log in.');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    let errorMessage = 'Unknown error';
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.error || errorData.message || errorMessage;
-    } catch (e) {
-      // If response is not JSON, try to get text
-      try {
-        const errorText = await response.text();
-        errorMessage = errorText || errorMessage;
-      } catch (textError) {
-        errorMessage = `HTTP ${response.status} ${response.statusText}`;
-      }
+  const method = (options.method || "GET").toUpperCase();
+  const normalizeHeaders = (
+    headersInit: HeadersInit | undefined
+  ): Record<string, string> => {
+    if (!headersInit) return {};
+    if (headersInit instanceof Headers) {
+      return Object.fromEntries(headersInit.entries());
     }
-    console.error(`API error for ${endpoint}:`, errorMessage);
-    throw new Error(errorMessage);
-  }
+    if (Array.isArray(headersInit)) {
+      return Object.fromEntries(headersInit);
+    }
+    return headersInit;
+  };
 
-  return response.json();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...normalizeHeaders(options.headers),
+  };
+
+  const hasBody = options.body !== undefined && options.body !== null;
+  const data = hasBody && typeof options.body === "string" ? JSON.parse(options.body) : options.body;
+
+  try {
+    const res = await http.request({
+      url: endpoint,
+      method,
+      headers,
+      data: hasBody ? data : undefined,
+    });
+    return res.data;
+  } catch (error: any) {
+    const message = error?.response?.data?.error || error?.message || "API request failed";
+    console.error(`API error for ${endpoint}:`, message);
+    throw new Error(message);
+  }
 };
 
 export const checkUsername = async (username: string) => {
