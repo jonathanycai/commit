@@ -10,7 +10,7 @@ const router = express.Router();
 
 // CSRF enforcement toggle (default OFF)
 // Flip to true once cookie-based refresh works end-to-end.
-const ENABLE_CSRF = true;
+const ENABLE_CSRF = false;
 
 const passthrough = (req, res, next) => next();
 
