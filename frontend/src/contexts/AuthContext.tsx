@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiService, AuthResponse, UserProfile } from '@/lib/api';
+import { apiService, AuthResponse } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { setAccessToken as setAccessTokenGlobal } from '@/lib/authToken';
 
 interface User {
   id: string;
@@ -44,34 +45,39 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!accessToken;
 
   // Check if user is already authenticated on app load
   useEffect(() => {
+    // One-time cleanup from old localStorage auth
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+      // Ensure CSRF cookie exists (for toggleable CSRF enforcement)
+      await apiService.getCsrfToken().catch(() => undefined);
 
-      // Try to get user profile to validate token
+      // Restore session via refresh cookie
+      const refreshRes = await apiService.refreshAccessToken();
+      setAccessToken(refreshRes.accessToken);
+      setAccessTokenGlobal(refreshRes.accessToken);
+
+      // Fetch profile to populate user state
       const response = await apiService.getUserProfile();
-      if (response.profile) {
-        setUser(response.profile);
-      }
+      if (response.profile) setUser(response.profile);
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Clear invalid token
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      setAccessToken(null);
+      setAccessTokenGlobal(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -82,12 +88,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.login({ email, password });
 
-      // Store tokens
-      localStorage.setItem('access_token', response.session.access_token);
-      localStorage.setItem('refresh_token', response.session.refresh_token);
-
-      // Set user
+      setAccessToken(response.accessToken);
+      setAccessTokenGlobal(response.accessToken);
       setUser(response.user);
+
+      // Enrich with profile fields if available
+      try {
+        const profileRes = await apiService.getUserProfile();
+        if (profileRes.profile) setUser(profileRes.profile);
+      } catch {
+        // ignore profile fetch errors on login
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -101,11 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.register({ email, password });
 
-      // Store tokens
-      localStorage.setItem('access_token', response.session.access_token);
-      localStorage.setItem('refresh_token', response.session.refresh_token);
-
-      // Set user
+      setAccessToken(response.accessToken);
+      setAccessTokenGlobal(response.accessToken);
       setUser(response.user);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -162,9 +170,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // };
 
   const logout = () => {
-    // Clear tokens and user
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    // Best-effort server logout (clears refresh cookie)
+    apiService.logout().catch(() => undefined);
+
+    setAccessToken(null);
+    setAccessTokenGlobal(null);
     setUser(null);
     queryClient.clear();
   };

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import healthRoutes from "./routes/health.js";
@@ -9,6 +10,7 @@ import applicationRoutes from "./routes/applications.js";
 import projectRoutes from "./routes/projects.js";
 import notificationRoutes from "./routes/notifications.js";
 import swipesRoutes from "./swipes/routes.js";
+import csrfRoutes from "./routes/csrf.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
 
 const app = express();
@@ -19,15 +21,34 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
-app.use(cors(
-    {
-        origin: [
-            "https://commit-jade.vercel.app",
-            "http://localhost:8080"
-        ],
-        credentials: true
-    }
-));
+const allowedOrigins = new Set([
+    "http://localhost:8080",
+    "http://localhost:3000",
+    "https://commit-jade.vercel.app",
+]);
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+
+            try {
+                const url = new URL(origin);
+                const hostname = url.hostname;
+
+                if (allowedOrigins.has(origin)) return callback(null, true);
+                if (hostname.endsWith(".vercel.app")) return callback(null, true);
+
+                return callback(new Error("Not allowed by CORS"));
+            } catch {
+                return callback(new Error("Not allowed by CORS"));
+            }
+        },
+        credentials: true,
+    })
+);
+
+app.use(cookieParser());
 app.use(express.json());
 
 // Apply general rate limiting to all routes
@@ -46,6 +67,9 @@ app.get("/", (req, res) => {
 
 // Health check routes
 app.use("/health", healthRoutes);
+
+// CSRF token endpoint (double-submit cookie)
+app.use(csrfRoutes);
 
 // Authentication routes
 app.use("/auth", authRoutes);
