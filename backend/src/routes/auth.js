@@ -10,7 +10,7 @@ const router = express.Router();
 const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
-    
+
     // Set access token cookie
     res.cookie('access_token', accessToken, {
         httpOnly: true,
@@ -135,8 +135,8 @@ router.get("/cookie-status", (req, res) => {
         cookieCount: cookieNames.length,
         cookieNames: cookieNames.filter(name => !name.includes('token') || name === 'access_token' || name === 'refresh_token'), // Don't expose actual token values
         // Note: httpOnly cookies cannot be read by JavaScript, but they are sent automatically with requests
-        message: hasAccessToken && hasRefreshToken 
-            ? 'Cookies are present and being used' 
+        message: hasAccessToken && hasRefreshToken
+            ? 'Cookies are present and being used'
             : 'No auth cookies found. Please log in.',
     });
 });
