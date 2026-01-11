@@ -6,6 +6,44 @@ import { validatePasswordStrength, checkPasswordStrength } from "../middleware/p
 
 const router = express.Router();
 
+// Helper function to set httpOnly cookies for tokens
+const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
+    
+    // Set access token cookie
+    res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: isProduction, // Only send over HTTPS in production
+        sameSite: 'lax', // CSRF protection
+        maxAge: maxAge,
+        path: '/',
+    });
+
+    // Set refresh token cookie (longer expiry)
+    res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: '/',
+    });
+};
+
+// Helper function to clear auth cookies
+// Must use same options as setCookie to ensure proper clearing
+const clearAuthCookies = (res) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        path: '/',
+    };
+    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
+};
+
 // Register new user
 router.post("/register", authLimiter, validatePasswordStrength, async (req, res) => {
     try {
@@ -25,10 +63,15 @@ router.post("/register", authLimiter, validatePasswordStrength, async (req, res)
             return res.status(400).json({ error: error.message });
         }
 
+        // Set httpOnly cookies instead of returning tokens in response
+        if (data.session) {
+            setAuthCookies(res, data.session.access_token, data.session.refresh_token, data.session.expires_at);
+        }
+
+        // Return user info without tokens (security: tokens are in httpOnly cookies)
         res.json({
             message: 'User registered successfully',
-            user: data.user,
-            session: data.session
+            user: data.user
         });
     } catch (error) {
         res.status(500).json({ error: 'Registration failed' });
@@ -54,10 +97,15 @@ router.post("/login", authLimiter, async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
 
+        // Set httpOnly cookies instead of returning tokens in response
+        if (data.session) {
+            setAuthCookies(res, data.session.access_token, data.session.refresh_token, data.session.expires_at);
+        }
+
+        // Return user info without tokens (security: tokens are in httpOnly cookies)
         res.json({
             message: 'Login successful',
-            user: data.user,
-            session: data.session
+            user: data.user
         });
     } catch (error) {
         res.status(500).json({ error: 'Login failed' });
@@ -73,8 +121,70 @@ router.get("/health", requireAuth, (req, res) => {
     });
 });
 
+// Cookie status endpoint - check if cookies are being used (safe for debugging)
+router.get("/cookie-status", (req, res) => {
+    const hasAccessToken = !!req.cookies?.access_token;
+    const hasRefreshToken = !!req.cookies?.refresh_token;
+    const allCookies = req.cookies || {};
+    const cookieNames = Object.keys(allCookies);
+
+    res.json({
+        cookiesEnabled: true,
+        hasAccessTokenCookie: hasAccessToken,
+        hasRefreshTokenCookie: hasRefreshToken,
+        cookieCount: cookieNames.length,
+        cookieNames: cookieNames.filter(name => !name.includes('token') || name === 'access_token' || name === 'refresh_token'), // Don't expose actual token values
+        // Note: httpOnly cookies cannot be read by JavaScript, but they are sent automatically with requests
+        message: hasAccessToken && hasRefreshToken 
+            ? 'Cookies are present and being used' 
+            : 'No auth cookies found. Please log in.',
+    });
+});
+
 // Password strength checker (for frontend validation)
 router.post("/check-password", checkPasswordStrength);
+
+// Logout endpoint - clears auth cookies
+router.post("/logout", (req, res) => {
+    clearAuthCookies(res);
+    res.json({ message: 'Logged out successfully' });
+});
+
+// OAuth callback endpoint - sets httpOnly cookies from OAuth tokens
+router.post("/oauth/callback", authLimiter, async (req, res) => {
+    try {
+        const { access_token, refresh_token, expires_at } = req.body;
+
+        if (!access_token || !refresh_token) {
+            return res.status(400).json({ error: 'Access token and refresh token are required' });
+        }
+
+        // Verify the token is valid by getting user info
+        const authClient = createAuthClient();
+        const { data: { user }, error } = await authClient.auth.getUser(access_token);
+
+        if (error || !user) {
+            return res.status(401).json({ error: 'Invalid access token' });
+        }
+
+        // Set httpOnly cookies
+        setAuthCookies(res, access_token, refresh_token, expires_at);
+
+        // Return user info
+        res.json({
+            message: 'OAuth authentication successful',
+            user: {
+                id: user.id,
+                email: user.email,
+                created_at: user.created_at,
+                updated_at: user.updated_at,
+            }
+        });
+    } catch (error) {
+        console.error('OAuth callback error:', error);
+        res.status(500).json({ error: 'OAuth callback failed' });
+    }
+});
 
 // Initiate Google OAuth flow
 // router.get("/google", authLimiter, async (req, res) => {

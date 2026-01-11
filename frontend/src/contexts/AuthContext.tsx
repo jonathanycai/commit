@@ -17,6 +17,8 @@ interface User {
   project_links?: { name: string; link: string }[];
 }
 
+
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -24,8 +26,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   // handleOAuthCallback: (accessToken: string, refreshToken: string, userInfo?: { id?: string; email?: string; name?: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  setUser: (user: User | null) => void; // Expose setUser for OAuth callback
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,22 +59,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Try to get user profile to validate token
+      // Tokens are in httpOnly cookies, automatically sent with requests
+      // Try to get user profile to validate authentication
       const response = await apiService.getUserProfile();
       if (response.profile) {
         setUser(response.profile);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Clear invalid token
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      // If auth fails, user is not authenticated (cookies may be invalid/expired)
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -82,11 +79,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.login({ email, password });
 
-      // Store tokens
-      localStorage.setItem('access_token', response.session.access_token);
-      localStorage.setItem('refresh_token', response.session.refresh_token);
-
-      // Set user
+      // Tokens are now in httpOnly cookies (set by backend), not in response
+      // Set user from response
       setUser(response.user);
     } catch (error) {
       console.error('Login failed:', error);
@@ -101,11 +95,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.register({ email, password });
 
-      // Store tokens
-      localStorage.setItem('access_token', response.session.access_token);
-      localStorage.setItem('refresh_token', response.session.refresh_token);
-
-      // Set user
+      // Tokens are now in httpOnly cookies (set by backend), not in response
+      // Set user from response
       setUser(response.user);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -161,12 +152,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   //   }
   // };
 
-  const logout = () => {
-    // Clear tokens and user
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setUser(null);
-    queryClient.clear();
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint to clear httpOnly cookies
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      // Clear user state and query cache
+      setUser(null);
+      queryClient.clear();
+    }
   };
 
   const value: AuthContextType = {
@@ -178,6 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // handleOAuthCallback,
     logout,
     checkAuth,
+    setUser,
   };
 
   return (

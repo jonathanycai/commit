@@ -1,9 +1,12 @@
 import { createAuthClient } from "../lib/supabase.js";
 
 // Auth middleware to verify JWT tokens
+// Reads from httpOnly cookies (secure) with fallback to Authorization header (for compatibility)
 export const requireAuth = async (req, res, next) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
+        // Priority: 1. Cookie (httpOnly, secure), 2. Authorization header (for compatibility)
+        const token = req.cookies?.access_token || req.headers.authorization?.replace('Bearer ', '');
+        
         if (!token) {
             return res.status(401).json({ error: 'No token provided' });
         }

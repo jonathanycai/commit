@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import healthRoutes from "./routes/health.js";
@@ -29,6 +30,7 @@ app.use(cors(
     }
 ));
 app.use(express.json());
+app.use(cookieParser()); // Parse cookies for httpOnly token storage
 
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
