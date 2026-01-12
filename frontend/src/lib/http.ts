@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getAccessToken } from "@/lib/authToken";
+import { getCsrfToken } from "@/lib/csrfToken";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -8,23 +9,21 @@ export const http = axios.create({
     withCredentials: true,
 });
 
-const getCookie = (name: string) => {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[$()*+.?[\\\]^{|}-]/g, "\\$&")}=([^;]*)`));
-    return match ? decodeURIComponent(match[1]) : null;
-};
-
 http.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers = (config.headers ?? {}) as any;
+        (config.headers as any).Authorization = `Bearer ${token}`;
     }
 
-    const csrfToken = getCookie("csrfToken");
-    if (csrfToken) {
-        config.headers = config.headers || {};
-        config.headers["X-CSRF-Token"] = csrfToken;
+    const method = (config.method || "GET").toUpperCase();
+    const isMutating = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+    if (isMutating) {
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+            config.headers = (config.headers ?? {}) as any;
+            (config.headers as any)["X-CSRF-Token"] = csrfToken;
+        }
     }
 
     return config;

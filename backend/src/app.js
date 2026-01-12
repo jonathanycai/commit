@@ -12,6 +12,7 @@ import notificationRoutes from "./routes/notifications.js";
 import swipesRoutes from "./swipes/routes.js";
 import csrfRoutes from "./routes/csrf.js";
 import { generalLimiter, rateLimitStatusRouter } from "./middleware/rateLimiter.js";
+import { csrfMiddleware } from "./middleware/csrf.js";
 
 const app = express();
 
@@ -45,6 +46,8 @@ app.use(
             }
         },
         credentials: true,
+        methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
     })
 );
 
@@ -75,19 +78,19 @@ app.use(csrfRoutes);
 app.use("/auth", authRoutes);
 
 // User profile routes
-app.use("/users", userRoutes);
+app.use("/users", csrfMiddleware, userRoutes);
 
 // Projects routes
-app.use("/projects", projectRoutes);
+app.use("/projects", csrfMiddleware, projectRoutes);
 
 // Applications/Requests routes
-app.use("/applications", applicationRoutes);
+app.use("/applications", csrfMiddleware, applicationRoutes);
 
 // Notifications routes
-app.use("/notifications", notificationRoutes);
+app.use("/notifications", csrfMiddleware, notificationRoutes);
 
 // Swipes functionality
-app.use("/swipes", swipesRoutes);
+app.use("/swipes", csrfMiddleware, swipesRoutes);
 
 // Start the server
 app.listen(process.env.PORT || 4000, () =>
