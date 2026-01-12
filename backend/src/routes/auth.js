@@ -8,9 +8,11 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jw
 
 const router = express.Router();
 
-// CSRF enforcement toggle (default OFF)
-// Flip to true once cookie-based refresh works end-to-end.
-const ENABLE_CSRF = true;
+// CSRF notes:
+// - Do NOT enforce CSRF on /login and /register (public endpoints).
+// - Do NOT enforce CSRF on /refresh so auth bootstrap can run: refresh -> fetch CSRF -> proceed.
+// - DO enforce CSRF on cookie-auth state-changing endpoints like /logout.
+const ENABLE_CSRF = false;
 
 const passthrough = (req, res, next) => next();
 
@@ -25,7 +27,7 @@ const getRefreshCookieOptions = () => {
 };
 
 // Register new user
-router.post("/register", authLimiter, validatePasswordStrength, ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+router.post("/register", authLimiter, validatePasswordStrength, passthrough, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -64,7 +66,7 @@ router.post("/register", authLimiter, validatePasswordStrength, ENABLE_CSRF ? ve
 });
 
 // Login user
-router.post("/login", authLimiter, ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+router.post("/login", authLimiter, passthrough, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -103,7 +105,7 @@ router.post("/login", authLimiter, ENABLE_CSRF ? verifyCsrf : passthrough, async
 });
 
 // Refresh access token using HttpOnly refreshToken cookie
-router.post("/refresh", ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+router.post("/refresh", passthrough, async (req, res) => {
     try {
         const refreshToken = req.cookies?.refreshToken;
         if (!refreshToken) {
