@@ -94,6 +94,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAccessTokenGlobal(response.accessToken);
       setUser(response.user);
 
+      // CSRF token is required for subsequent mutating requests.
+      await apiService.getCsrfToken();
+
       // Enrich with profile fields if available
       try {
         const profileRes = await apiService.getUserProfile();
@@ -117,6 +120,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAccessToken(response.accessToken);
       setAccessTokenGlobal(response.accessToken);
       setUser(response.user);
+
+      // CSRF token is required for subsequent mutating requests.
+      await apiService.getCsrfToken();
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
