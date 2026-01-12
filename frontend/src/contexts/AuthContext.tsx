@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiService, AuthResponse } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { setAccessToken as setAccessTokenGlobal } from '@/lib/authToken';
+import { setCsrfToken as setCsrfTokenGlobal } from '@/lib/csrfToken';
 
 interface User {
   id: string;
@@ -62,13 +63,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      // Ensure CSRF cookie exists (for toggleable CSRF enforcement)
-      await apiService.getCsrfToken().catch(() => undefined);
-
       // Restore session via refresh cookie
       const refreshRes = await apiService.refreshAccessToken();
       setAccessToken(refreshRes.accessToken);
       setAccessTokenGlobal(refreshRes.accessToken);
+
+      // Fetch + store CSRF token
+      await apiService.getCsrfToken();
 
       // Fetch profile to populate user state
       const response = await apiService.getUserProfile();
@@ -77,6 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Auth check failed:', error);
       setAccessToken(null);
       setAccessTokenGlobal(null);
+      setCsrfTokenGlobal(null);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -175,6 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setAccessToken(null);
     setAccessTokenGlobal(null);
+    setCsrfTokenGlobal(null);
     setUser(null);
     queryClient.clear();
   };

@@ -10,7 +10,7 @@ const router = express.Router();
 
 // CSRF enforcement toggle (default OFF)
 // Flip to true once cookie-based refresh works end-to-end.
-const ENABLE_CSRF = false;
+const ENABLE_CSRF = true;
 
 const passthrough = (req, res, next) => next();
 
@@ -125,7 +125,7 @@ router.post("/refresh", ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res)
 });
 
 // Logout: clear refresh cookie
-router.post("/logout", ENABLE_CSRF ? verifyCsrf : passthrough, async (req, res) => {
+router.post("/logout", verifyCsrf, async (req, res) => {
     try {
         res.clearCookie("refreshToken", getRefreshCookieOptions());
         res.json({ message: "Logged out" });

@@ -1,4 +1,5 @@
 import { http } from "@/lib/http";
+import { setCsrfToken } from "@/lib/csrfToken";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -148,9 +149,12 @@ class ApiService {
   }
 
   async getCsrfToken(): Promise<{ csrfToken: string }> {
-    return this.request<{ csrfToken: string }>("/csrf-token", {
+    const res = await this.request<{ csrfToken: string }>("/csrf-token", {
       method: "GET",
     });
+
+    setCsrfToken(res.csrfToken);
+    return res;
   }
 
   async refreshAccessToken(): Promise<{ accessToken: string }> {
