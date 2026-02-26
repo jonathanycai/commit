@@ -84,6 +84,22 @@ export interface Match {
   created_at: string;
 }
 
+export interface Notification {
+  id: string;
+  receiver_id: string;
+  sender_id: string;
+  project_id: string;
+  type: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  users?: {
+    id: string;
+    username: string;
+    email: string;
+  };
+}
+
 class ApiService {
   private baseURL: string;
 
@@ -436,5 +452,13 @@ export const updateProject = async (projectId: string, projectData: any) => {
     method: 'PUT',
     body: JSON.stringify(projectData),
   });
+};
+
+// Get all notifications for the current user
+export const getNotifications = async (): Promise<{
+  notifications: Notification[];
+  count: number;
+}> => {
+  return apiRequest('/notifications', { method: 'GET' });
 };
 

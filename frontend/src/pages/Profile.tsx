@@ -4,9 +4,10 @@ import MatchCard from "@/components/profile/MatchCard";
 import RequestCard from "@/components/profile/RequestCard";
 import ProjectCard from "@/components/profile/ProjectCard";
 import MyProjectCard from "@/components/profile/MyProjectCard";
+import NotificationCard from "@/components/profile/NotificationCard";
 import PostProjectDialog from "@/components/projects/PostProjectDialog";
 import homepageBg from "@/assets/homepage-bg.svg";
-import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
+import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, getNotifications, Match, Notification } from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -87,9 +88,17 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: notificationsData, isLoading: isLoadingNotifications } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: getNotifications,
+    staleTime: 0, // always refetch when invalidated by the SSE stream
+  });
+
   const projects = myProjectsData?.my_projects || [];
   const receivedRequests = requestsData?.received_requests || [];
   const matches = matchesData?.matches || [];
+  const notifications = notificationsData?.notifications || [];
+  const unreadCount = notifications.filter((n: Notification) => !n.is_read).length;
 
   // Mutations
   const approveMutation = useMutation({
@@ -167,7 +176,9 @@ const Profile = () => {
                     ? "you matched. now what?"
                     : activeTab === "requests"
                       ? "they saw your idea. now they want in."
-                      : "your ideas. your vision."}
+                      : activeTab === "notifications"
+                        ? "here's what you missed."
+                        : "your ideas. your vision."}
                 </span>
               </h1>
 
@@ -198,6 +209,20 @@ const Profile = () => {
                     }`}
                 >
                   Requests
+                </button>
+                <button
+                  onClick={() => setActiveTab("notifications")}
+                  className={`pb-3 transition-colors relative ${activeTab === "notifications"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-3 h-4 min-w-[16px] px-1 rounded-full bg-[#5B7FFF] text-[10px] font-bold text-white flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -298,6 +323,24 @@ const Profile = () => {
                       </div>
                     );
                   })
+                )}
+              </div>
+            )}
+
+            {activeTab === "notifications" && (
+              <div className="mt-8 space-y-4">
+                {isLoadingNotifications ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-white/60">Loading notifications...</div>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-white/60">No notifications yet.</div>
+                  </div>
+                ) : (
+                  notifications.map((notification: Notification) => (
+                    <NotificationCard key={notification.id} notification={notification} />
+                  ))
                 )}
               </div>
             )}

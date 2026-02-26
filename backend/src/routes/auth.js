@@ -127,9 +127,16 @@ router.post("/refresh", passthrough, async (req, res) => {
 });
 
 // Logout: clear refresh cookie
-router.post("/logout", verifyCsrf, async (req, res) => {
+router.post("/logout", async (req, res) => {
     try {
+        const isProd = process.env.NODE_ENV === "production";
         res.clearCookie("refreshToken", getRefreshCookieOptions());
+        res.clearCookie("csrfToken", {
+            httpOnly: false,
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            path: "/",
+        });
         res.json({ message: "Logged out" });
     } catch (error) {
         res.status(500).json({ error: "Logout failed" });

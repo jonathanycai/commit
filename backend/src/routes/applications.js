@@ -2,6 +2,7 @@ import express from "express";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { applicationLimiter } from "../middleware/rateLimiter.js";
+import { broadcastToUser } from "../lib/notificationsHub.js";
 
 const router = express.Router();
 
@@ -116,6 +117,9 @@ router.post("/", requireAuth, applicationLimiter, async (req, res) => {
                     message: `${data.users?.username || "Someone"} is down to commit to your project: ${project.title}`,
                     is_read: false
                 });
+
+            // Push realtime SSE event to the project owner
+            broadcastToUser(project.owner_id, { type: "notification_created" });
         } catch (notifErr) {
             console.error("Error sending notification:", notifErr);
             // Don't fail the application if notification fails
@@ -311,6 +315,9 @@ router.post("/:id/approve", requireAuth, async (req, res) => {
                 type: 'approval',
                 message: `Your application to join "${application.projects.title}" has been approved!`
             });
+
+        // Push realtime SSE event to the applicant ("match" notification)
+        broadcastToUser(application.user_id, { type: "notification_created" });
 
         res.json({
             message: 'Application approved successfully',

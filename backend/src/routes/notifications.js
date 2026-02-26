@@ -1,8 +1,44 @@
 import express from "express";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
+import { addClient, removeClient, broadcastToUser } from "../lib/notificationsHub.js";
 
 const router = express.Router();
+
+/**
+ * 🔴 SSE stream – push realtime notification events to the logged-in user.
+ * Uses fetch()-based SSE on the client (EventSource can't send Auth headers).
+ */
+router.get("/stream", requireAuth, (req, res) => {
+    const userId = req.user.id;
+
+    // SSE headers
+    res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no", // prevent Render/nginx proxy buffering
+    });
+
+    // Initial connection confirmation
+    res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+
+    // Keep-alive ping every 25 s so proxies don't drop the connection
+    const keepAlive = setInterval(() => {
+        try {
+            res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
+        } catch {
+            clearInterval(keepAlive);
+        }
+    }, 25_000);
+
+    addClient(userId, res);
+
+    req.on("close", () => {
+        clearInterval(keepAlive);
+        removeClient(userId, res);
+    });
+});
 
 /**
  * 📨 Create a new notification
@@ -48,6 +84,9 @@ router.post("/", requireAuth, async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Push realtime event to the receiver
+        broadcastToUser(receiver_id, { type: "notification_created" });
 
         res.status(201).json({
             message: "Notification created successfully",
