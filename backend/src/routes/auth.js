@@ -10,34 +10,35 @@ const router = express.Router();
 const setAuthCookies = (res, accessToken, refreshToken, expiresAt) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const maxAge = expiresAt ? Math.floor((expiresAt * 1000 - Date.now()) / 1000) : 60 * 60 * 24 * 7; // 7 days default
-    
-    // Set access token cookie
+    // In production (e.g. frontend on Vercel, backend on Render): use sameSite: 'none' + secure
+    // so the browser sends the cookie on cross-origin API requests. In dev, sameSite: 'lax' is enough for same-origin.
+    const sameSite = isProduction ? 'none' : 'lax';
+
     res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction, // Only send over HTTPS in production
-        sameSite: 'lax', // CSRF protection
-        maxAge: maxAge,
+        secure: isProduction,
+        sameSite,
+        maxAge,
         path: '/',
     });
 
-    // Set refresh token cookie (longer expiry)
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite,
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/',
     });
 };
 
-// Helper function to clear auth cookies
-// Must use same options as setCookie to ensure proper clearing
+// Helper function to clear auth cookies (must match options used in setAuthCookies)
 const clearAuthCookies = (res) => {
     const isProduction = process.env.NODE_ENV === 'production';
+    const sameSite = isProduction ? 'none' : 'lax';
     const cookieOptions = {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite,
         path: '/',
     };
     res.clearCookie('access_token', cookieOptions);

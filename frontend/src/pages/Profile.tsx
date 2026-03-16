@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import MatchCard from "@/components/profile/MatchCard";
 import RequestCard from "@/components/profile/RequestCard";
@@ -9,6 +9,8 @@ import homepageBg from "@/assets/homepage-bg.svg";
 import { getReceivedRequests, getMyProjects, approveApplication, rejectApplication, deleteProject, getMatches, Match } from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,25 +155,26 @@ const Profile = () => {
 
         <div className="container mx-auto px-4 pt-24 pb-12">
           <div className="max-w-4xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold mb-6 font-lexend">
-                <span
-                  className="bg-clip-text"
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #9D9CFF -16.21%, #FAFAFA 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  {activeTab === "matches"
-                    ? "you matched. now what?"
-                    : activeTab === "requests"
-                      ? "they saw your idea. now they want in."
-                      : "your ideas. your vision."}
-                </span>
-              </h1>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-3 font-lexend">
+                  <span
+                    className="bg-clip-text"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #9D9CFF -16.21%, #FAFAFA 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    {activeTab === "matches"
+                      ? "you matched. now what?"
+                      : activeTab === "requests"
+                        ? "they saw your idea. now they want in."
+                        : "your ideas. your vision."}
+                  </span>
+                </h1>
 
-              <div className="flex gap-6 text-sm font-medium border-b border-border overflow-x-auto no-scrollbar">
+                <div className="flex gap-6 text-sm font-medium border-b border-border overflow-x-auto no-scrollbar">
                 <button
                   onClick={() => setActiveTab("matches")}
                   className={`pb-3 transition-colors ${activeTab === "matches"
@@ -200,6 +203,16 @@ const Profile = () => {
                   Requests
                 </button>
               </div>
+              </div>
+
+              <Link to="/profile/edit">
+                <Button
+                  variant="ghost"
+                  className="h-9 px-4 rounded-xl border border-white/10 text-xs font-medium text-white/80 hover:text-white hover:bg-white/5"
+                >
+                  Edit profile
+                </Button>
+              </Link>
             </div>
 
             {activeTab === "matches" && (

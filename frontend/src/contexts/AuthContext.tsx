@@ -77,9 +77,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.login({ email, password });
 
-      // Tokens are now in httpOnly cookies (set by backend), not in response
-      // Set user from response
+      // Set user from response; then refresh to full profile (username, role, etc.) from DB
       setUser(response.user);
+      await checkAuth();
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -93,9 +93,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response: AuthResponse = await apiService.register({ email, password });
 
-      // Tokens are now in httpOnly cookies (set by backend), not in response
-      // Set user from response
       setUser(response.user);
+      await checkAuth();
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, LogOut, Menu } from "lucide-react";
@@ -16,41 +16,51 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { apiService } from "@/lib/api";
 
+const AVATAR_STORAGE_PREFIX = "commit_profile_avatar_";
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth(); // 👈 from your AuthContext
+  const { user, logout } = useAuth();
   const [username, setUsername] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const isActive = (path: string) => location.pathname === path;
+  const userId = user?.id;
+
+  const readAvatar = useCallback(() => {
+    if (!userId) return;
+    const stored = localStorage.getItem(`${AVATAR_STORAGE_PREFIX}${userId}`);
+    setAvatarUrl(stored);
+  }, [userId]);
 
   useEffect(() => {
-    console.log('Navbar - user object:', user);
-    // If user already has a username (e.g., from OAuth), use it immediately
     if (user?.username) {
-      console.log('Navbar - using username from user object:', user.username);
       setUsername(user.username);
-      return;
+    } else if (user) {
+      const fetchProfile = async () => {
+        try {
+          const res = await apiService.getUserProfile();
+          setUsername(res.profile.username || user?.username || user?.email?.split("@")[0] || "User");
+        } catch {
+          setUsername(user?.username || user?.email?.split("@")[0] || "User");
+        }
+      };
+      fetchProfile();
     }
-
-    // Otherwise, try to fetch the profile
-    const fetchProfile = async () => {
-      try {
-        const res = await apiService.getUserProfile(); // fetch current user
-        const displayName = res.profile.username || user?.username || user?.email?.split("@")[0] || "User";
-        console.log('Navbar - using username from profile:', displayName);
-        setUsername(displayName);
-      } catch (err) {
-        console.error("Failed to fetch user profile:", err);
-        // Fallback to email username or "User"
-        const displayName = user?.username || user?.email?.split("@")[0] || "User";
-        console.log('Navbar - using fallback username:', displayName);
-        setUsername(displayName);
-      }
-    };
-
-    if (user) fetchProfile();
   }, [user]);
+
+  useEffect(() => {
+    readAvatar();
+  }, [readAvatar]);
+
+  useEffect(() => {
+    const onAvatarUpdated = (e: CustomEvent<{ userId?: string }>) => {
+      if (e.detail?.userId === userId) readAvatar();
+    };
+    window.addEventListener("profile-avatar-updated", onAvatarUpdated as EventListener);
+    return () => window.removeEventListener("profile-avatar-updated", onAvatarUpdated as EventListener);
+  }, [userId, readAvatar]);
 
   const handleLogout = () => {
     logout();
@@ -101,17 +111,28 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Desktop Profile Dropdown */}
+        {/* Desktop Profile Dropdown - name and photo top right */}
         <div className="hidden md:block">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 rounded-full">
-                <div className="h-8 w-8 rounded-full bg-gradient-primary" />
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                    {(username || "?").charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <span className="text-sm">{username || "..."}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-background border-border z-50">
+              <DropdownMenuItem asChild>
+                <Link to="/profile/edit" className="cursor-pointer text-foreground hover:bg-accent">
+                  Edit profile
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleLogout}
                 className="cursor-pointer text-foreground hover:bg-accent"
@@ -157,9 +178,21 @@ const Navbar = () => {
 
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-primary" />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                        {(username || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span className="text-sm font-medium">{username || "..."}</span>
                   </div>
+                  <Link
+                    to="/profile/edit"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    Edit profile
+                  </Link>
                   <Button
                     variant="ghost"
                     className="justify-start px-0 text-muted-foreground hover:text-foreground"

@@ -14,6 +14,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Match from "./pages/Match";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import CreateProject from "./pages/CreateProject";
 import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/match" element={<Match />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
               <Route path="/create-project" element={<CreateProject />} />
             </Route>
             <Route path="*" element={<NotFound />} />
