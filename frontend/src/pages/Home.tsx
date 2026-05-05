@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import HomeProjectCard from "@/components/projects/HomeProjectCard";
@@ -8,10 +8,15 @@ import mascot1 from "@/assets/mascot-1.svg";
 import mascot2 from "@/assets/mascot-2.svg";
 import { useState, useEffect } from "react";
 import { getAllProjects } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import AccountRequiredDialog from "@/components/auth/AccountRequiredDialog";
 
 const Home = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -73,15 +78,21 @@ const Home = () => {
                 </div>
 
                 <div className="mt-8">
-                  <Link to="/match">
-                    <Button
-                      size="lg"
-                      className="h-14 px-8 text-base font-medium rounded-xl"
-                      style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
-                    >
-                      Find people crazy enough to join you
-                    </Button>
-                  </Link>
+                  <Button
+                    size="lg"
+                    className="h-14 px-8 text-base font-medium rounded-xl"
+                    style={{ backgroundColor: '#A6F4C5', color: '#111118' }}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        setIsAccountDialogOpen(true);
+                        return;
+                      }
+
+                      navigate("/match");
+                    }}
+                  >
+                    Find people crazy enough to join you
+                  </Button>
                 </div>
               </div>
 
@@ -207,6 +218,10 @@ const Home = () => {
           }
         }
       `}</style>
+      <AccountRequiredDialog
+        open={isAccountDialogOpen}
+        onOpenChange={setIsAccountDialogOpen}
+      />
     </div>
   );
 };

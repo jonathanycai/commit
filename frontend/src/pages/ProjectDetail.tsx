@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, Users, ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import AccountRequiredDialog from "@/components/auth/AccountRequiredDialog";
 
 // Mock data - in real app would fetch based on id
 const mockProject = {
@@ -38,7 +40,10 @@ const mockProject = {
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [blurb, setBlurb] = useState("");
+  const [isInterestDialogOpen, setIsInterestDialogOpen] = useState(false);
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
 
   const handleSubmitInterest = () => {
     if (!blurb.trim()) {
@@ -47,6 +52,7 @@ const ProjectDetail = () => {
     }
     toast.success("Interest submitted! The project owner will review your profile.");
     setBlurb("");
+    setIsInterestDialogOpen(false);
   };
 
   return (
@@ -110,13 +116,22 @@ const ProjectDetail = () => {
                 </span>
               </div>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="w-full bg-gradient-primary hover:opacity-90">
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit Your Interest
-                  </Button>
-                </DialogTrigger>
+              <Button
+                className="w-full bg-gradient-primary hover:opacity-90"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setIsAccountDialogOpen(true);
+                    return;
+                  }
+
+                  setIsInterestDialogOpen(true);
+                }}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Submit Your Interest
+              </Button>
+
+              <Dialog open={isInterestDialogOpen} onOpenChange={setIsInterestDialogOpen}>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Introduce Yourself</DialogTitle>
@@ -137,6 +152,10 @@ const ProjectDetail = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              <AccountRequiredDialog
+                open={isAccountDialogOpen}
+                onOpenChange={setIsAccountDialogOpen}
+              />
             </div>
           </Card>
 

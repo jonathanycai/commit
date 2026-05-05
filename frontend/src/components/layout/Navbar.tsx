@@ -15,12 +15,21 @@ import {
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiService } from "@/lib/api";
+import AccountRequiredDialog from "@/components/auth/AccountRequiredDialog";
+
+const navItems = [
+  { path: "/", label: "home", requiresAuth: false },
+  { path: "/match", label: "swipe", requiresAuth: true },
+  { path: "/projects", label: "browse projects", requiresAuth: false },
+  { path: "/profile", label: "my commits", requiresAuth: true },
+];
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth(); // 👈 from your AuthContext
+  const { user, isAuthenticated, logout } = useAuth();
   const [username, setUsername] = useState<string>("");
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -57,9 +66,19 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const handleNavigate = (path: string, requiresAuth: boolean) => {
+    if (requiresAuth && !isAuthenticated) {
+      setIsAccountDialogOpen(true);
+      return;
+    }
+
+    navigate(path);
+  };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-sm font-lexend">
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-sm font-lexend">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex flex-col gap-1">
           <span
@@ -82,45 +101,51 @@ const Navbar = () => {
 
         {/* Desktop Nav Links */}
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
-          {[
-            { path: "/home", label: "home" },
-            { path: "/match", label: "swipe" },
-            { path: "/projects", label: "browse projects" },
-            { path: "/profile", label: "my commits" },
-          ].map((item) => (
-            <Link
+          {navItems.map((item) => (
+            <button
               key={item.path}
-              to={item.path}
+              type="button"
+              onClick={() => handleNavigate(item.path, item.requiresAuth)}
               className={`text-sm font-medium transition-colors ${isActive(item.path)
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               {item.label}
-            </Link>
+            </button>
           ))}
         </div>
 
         {/* Desktop Profile Dropdown */}
         <div className="hidden md:block">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 rounded-full">
-                <div className="h-8 w-8 rounded-full bg-gradient-primary" />
-                <span className="text-sm">{username || "..."}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-background border-border z-50">
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="cursor-pointer text-foreground hover:bg-accent"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 rounded-full">
+                  <div className="h-8 w-8 rounded-full bg-gradient-primary" />
+                  <span className="text-sm">{username || "..."}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-background border-border z-50">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-foreground hover:bg-accent"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              onClick={() => navigate("/welcome")}
+              className="rounded-xl"
+              style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
+            >
+              Create account
+            </Button>
+          )}
         </div>
 
         {/* Mobile Menu */}
@@ -134,47 +159,58 @@ const Navbar = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-background border-l border-border">
               <div className="flex flex-col gap-8 mt-8">
                 <div className="flex flex-col gap-4">
-                  {[
-                    { path: "/home", label: "home" },
-                    { path: "/match", label: "swipe" },
-                    { path: "/projects", label: "browse projects" },
-                    { path: "/profile", label: "my commits" },
-                  ].map((item) => (
-                    <Link
+                  {navItems.map((item) => (
+                    <button
                       key={item.path}
-                      to={item.path}
+                      type="button"
+                      onClick={() => handleNavigate(item.path, item.requiresAuth)}
                       className={`text-lg font-medium transition-colors ${isActive(item.path)
                         ? "text-primary"
                         : "text-muted-foreground hover:text-foreground"
                         }`}
                     >
                       {item.label}
-                    </Link>
+                    </button>
                   ))}
                 </div>
 
                 <div className="h-px bg-border" />
 
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-primary" />
-                    <span className="text-sm font-medium">{username || "..."}</span>
+                {isAuthenticated ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-gradient-primary" />
+                      <span className="text-sm font-medium">{username || "..."}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="justify-start px-0 text-muted-foreground hover:text-foreground"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
                   </div>
+                ) : (
                   <Button
-                    variant="ghost"
-                    className="justify-start px-0 text-muted-foreground hover:text-foreground"
-                    onClick={handleLogout}
+                    onClick={() => navigate("/welcome")}
+                    className="rounded-xl"
+                    style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    Create account
                   </Button>
-                </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
-    </nav>
+        </div>
+      </nav>
+      <AccountRequiredDialog
+        open={isAccountDialogOpen}
+        onOpenChange={setIsAccountDialogOpen}
+      />
+    </>
   );
 };
 

@@ -36,19 +36,20 @@ const App = () => (
         <SpeedInsights />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Welcome />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/step1" element={<RegisterStep1 />} />
             <Route path="/register/step2" element={<RegisterStep2 />} />
             <Route path="/register/step3" element={<RegisterStep3 />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
 
             {/* --- PROTECTED ROUTES (Only accessible if logged in) --- */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/match" element={<Match />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/create-project" element={<CreateProject />} />

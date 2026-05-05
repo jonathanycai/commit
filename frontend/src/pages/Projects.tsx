@@ -12,6 +12,8 @@ import { getAllProjects, getFilteredProjects, applyToProjectBoard } from "@/lib/
 import FeedProjectCard from "@/components/projects/FeedProjectCard";
 import PostProjectDialog from "@/components/projects/PostProjectDialog";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import AccountRequiredDialog from "@/components/auth/AccountRequiredDialog";
 
 // Options for checkboxes
 const timeCommitmentOptions = ['1-2 hrs/week', '3-4 hrs/week', '5-6 hrs/week', '7-8 hrs/week', '8+ hrs/week'];
@@ -120,10 +122,13 @@ const FilterContent = ({
 );
 
 const Projects = () => {
+  const { isAuthenticated } = useAuth();
+
   // State for UI interactions
   const [applying, setApplying] = useState<string | null>(null);
   const [appliedProjects, setAppliedProjects] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -201,6 +206,11 @@ const Projects = () => {
   const pagination = data?.pagination || null;
 
   const handleApply = async (projectId: string) => {
+    if (!isAuthenticated) {
+      setIsAccountDialogOpen(true);
+      return;
+    }
+
     setApplying(projectId);
     try {
       await applyToProjectBoard(projectId);
@@ -311,7 +321,14 @@ const Projects = () => {
                   size="lg"
                   className="rounded-xl"
                   style={{ backgroundColor: "#A6F4C5", color: "#111118" }}
-                  onClick={() => setIsDialogOpen(true)}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setIsAccountDialogOpen(true);
+                      return;
+                    }
+
+                    setIsDialogOpen(true);
+                  }}
                 >
                   + Post your project
                 </Button>
@@ -390,6 +407,10 @@ const Projects = () => {
       <PostProjectDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+      />
+      <AccountRequiredDialog
+        open={isAccountDialogOpen}
+        onOpenChange={setIsAccountDialogOpen}
       />
     </div>
   );
